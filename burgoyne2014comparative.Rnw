@@ -4,8 +4,10 @@
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
 \usepackage{csquotes}
+\usepackage{url}
 
-\usepackage[osf]{newtxtext}
+% Bas: this packages won't compile on my machine
+%\usepackage[osf]{newtxtext}
 \usepackage{newtxmath}
 % The TeX-Live newtx package is out of date, so correct math figures.
 \newcommand*{\mathdefault}{ntxrx}
@@ -21,6 +23,12 @@
 \titleformat{\subsection}{\fontfamily{ntxrx}\bfseries\selectfont\raggedright}{\thesubsection}{0.6em}{}
 
 \usepackage{graphicx}
+
+% for creating comments
+\newcommand{\wrap}[3]{{\small \textcolor{#2}{[\textbf{#1:} #3]}}}
+\newcommand{\Bas}[1]{\wrap{Bas}{blue}{#1}}
+\newcommand{\Ashley}[1]{\wrap{Ashley}{red}{#1}}
+\newcommand{\Johan}[1]{\wrap{Johan}{orange}{#1}}
 
 
 \title{%
@@ -69,11 +77,74 @@
 %
 \section{Introduction}\label{sec:introduction}
 
+\Bas{Will we use US or UK English?}
+
+\Bas{Introduce the acronym ACE somewhere in the introduction}
+
+\Bas{Somewhere at the end of this section I would appreciate a paragraph that summarises the main contribution of this paper.}
+
 \subsection{History of ACE Evaluation}
+
+Automatic chord recognition has a long tradition within the Music Information
+Retrieval (MIR) community and (automatically extracted) chords are generally
+recognised as a useful harmonic representation in academia as well as in
+industry. For instance, in an academic context it has been shown that chords are
+interesting for addressing musicological
+hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as a
+mid-level feature to aid in retrieval tasks like cover-song
+finding~\cite{haas2011,khadkevich2013}. In an industry setting, music start-ups
+like Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} apply ACE to
+various on-line music sources, and at time of writing Chordify is attracts for more
+than 2 million unique visitors every month.
+
+% 2008: 13 teams, 15 algorithms
+% 2009: 10 teams, 18 algorithms
+% 2010: 10 teams, 15 algorithms
+% 2011:  9 teams, 18 algorithms
+% 2012:  6 teams, 11 algorithms
+% 2013:  7 teams, 12 algorithms
+
+To accommodate the need for good ACE algorithms, the MIREX audio chord
+estimation task has received a lot of attention within the MIR community. Since
+its inception in 2008, each year between 6 and 13 different teams have submitted
+in total 11 to 18 different algorithms. Although ACE algorithms are applied
+within industry and academia, and the number of participants has decreased
+slightly the last three years, the problem of automatic chord transcription is
+nowhere near solved. On fresh validation data, the best-performing algorithms in
+2013 barely reached a 75 percent correct overlap when considering only 24 major
+and minor chords.
+
+Although MIREX is a terrific platform for evaluating the performance of ACE
+algorithms, already in 2010 it was recognised that the evaluation of the
+algorithms could be improved. At that time the quality of automatically
+extracted chord sequences was evaluated by calculating the Chord Sequence Recall
+(CSR) that reflected the proportion of correctly labelled chords and a Weighted
+Chord Sequence Recall (WCSR) that weighted the grand average by the length of a
+song. using a vocabulary of 12 major and minor chords. At ISMIR 2010, a group of
+ten researchers met to discuss their dissatisfaction with the ACE evaluation
+measures. In the resulting `Utrecht
+Agreement'\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
+it was proposed that future evaluations should include more diverse chord
+vocabularies, like seventh chords, inversions, etc., as the vocabulary of twelve
+major and minor chords was considered a rather coarse representation of tonal
+harmony. Furthermore, it was consent that next to a measure of correct overlap
+the segmentation of a chord sequence should be measured properly.
+
+At approximately the same time Christopher Harte proposed new solutions to
+measure the chord sequence recall and segmentation that solved the problems
+indicated in the Utrecht agreement~\cite{harte2010}. \Bas{Maybe we should
+explain Harte's work in more detail here.} Recently, Pauwels en
+Peeters~\cite{Pauwels-Peeters-2013} implemented most of the evaluation
+improvements suggested by Harte and performed a rigorous re-evaluation of all
+MIREX ACE submissions in 2010--2012. Al last, at ISMIR
+2013\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}
+also the evaluation of chord sequence segmentation was addressed and implemented
+suggested by Harte~\cite{harte2010} and Mauch~\cite{mauch2010}.
+
 
 \section{Logistic Regression with GEEs}
 
-\bibliographystyle{ismir2014}
-\bibliography{burgoyne2014ismir}
+%\bibliographystyle{ismir2014}
+\bibliography{burgoyne2014comparative}
 
 \end{document}
