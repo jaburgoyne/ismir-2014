@@ -1,0 +1,79 @@
+\documentclass{article}
+\usepackage{ismir2014,amsmath,cite}
+
+\usepackage[utf8]{inputenc}
+\usepackage[british]{babel}
+\usepackage{csquotes}
+
+\usepackage[osf]{newtxtext}
+\usepackage{newtxmath}
+% The TeX-Live newtx package is out of date, so correct math figures.
+\newcommand*{\mathdefault}{ntxrx}
+\DeclareSymbolFont{operators}{\encodingdefault}{\mathdefault}{m}{n}
+\SetSymbolFont{operators}{bold}{\encodingdefault}{\mathdefault}{b}{n}
+\DeclareMathAlphabet{\mathit}{\encodingdefault}{\mathdefault}{m}{it}
+\DeclareMathAlphabet{\mathbf}{\encodingdefault}{\mathdefault}{b}{n}
+\SetMathAlphabet{\mathit}{bold}{\encodingdefault}{\mathdefault}{b}{it}
+\usepackage[tracking,letterspace=50,babel]{microtype}
+\newcommand*{\acro}[1]{\textsc{\MakeLowercase{#1}}}
+\usepackage{titlesec}
+\titleformat{\section}{\fontfamily{ntxrx}\bfseries\selectfont\centering\uppercase}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\fontfamily{ntxrx}\bfseries\selectfont\raggedright}{\thesubsection}{0.6em}{}
+
+\usepackage{graphicx}
+
+
+\title{%
+  On comparative statistics for labelling tasks\\%
+  What can we learn from MIREX ACE $\mathbf{2013}$?%
+}
+
+\threeauthors
+  {First author} {Affiliation1 \\ {\tt author1@ismir.edu}}
+  {Second author} {\bf Retain these fake authors in\\\bf submission to preserve the formatting}
+  {Third author} {Affiliation3 \\ {\tt author3@ismir.edu}}
+
+% Post-review
+% \threeauthors
+%   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
+%   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
+%   {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
+
+\begin{document}
+%
+\maketitle
+%
+\begin{abstract}
+  For \acro{MIREX} 2013, the audio chord estimation \acro{(ACE)} task
+  used a new evaluation scheme. Using chord vocabularies of differing
+  complexity as well as segmentation measures, the new scheme provides
+  more information than the \acro{ACE} evaluations from previous
+  years. With this new information, however, comes new interpretive
+  challenges. What are the correlations among different songs and,
+  more importantly, different submissions across the new measures?
+  Performance falls off for all submissions as the vocabularies
+  increase in complexity, but does it do so directly in proportion to
+  the number of more complex chords, or are certain algorithms indeed
+  more robust? What are the outliers, song-algorithm pairs where the
+  performance was substantially higher or lower than would be
+  predicted, and how can they be explained? Answering these questions
+  requires moving beyond the Friedman tests that have most often been
+  used to compare algorithms to a richer underlying model. We propose
+  a logistic-regression approach for generating comparative statistics
+  for \acro{MIREX ACE}, supported with generalised estimating
+  equations \acro{(GEEs)} to correct for repeated measures. We use the
+  \acro{MIREX} 2013 \acro{ACE} results as a case study to illustrate
+  our proposed method, including some of interesting aspects of the
+  evaluation that might not apparent from the headline results alone.
+\end{abstract}
+%
+\section{Introduction}\label{sec:introduction}
+
+\subsection{History of ACE Evaluation}
+
+\section{Logistic Regression with GEEs}
+
+\bibliographystyle{ismir2014}
+\bibliography{burgoyne2014ismir}
+
+\end{document}
