@@ -1,0 +1,16 @@
+List: "BillboardTest2013.lst"
+
+****************************
+* Chords MirexSeventhsBass *
+****************************
+Duration of evaluated symbols: 31048.9 s
+Average score: 46.4502%
+
+Correct chords: 14371.7s (46.2874%)
+Only root correct: 8035.49s (25.8801%)
+Only type correct: 2624.19s (8.45178%)
+All wrong: 4591.84s (14.789%)
+Deleted chords: 1.6241 s (0.00523079%)
+
+Correct no-chords: 50.5561 s (0.162827%)
+Inserted chords: 1373.5 s (4.42366%)

@@ -1,0 +1,16 @@
+List: "BillboardTest2012.lst"
+
+**************************
+* Chords MirexMajMinBass *
+**************************
+Duration of evaluated symbols: 37014 s
+Average score: 74.3291%
+
+Correct chords: 26480.4s (71.5415%)
+Only root correct: 1866.95s (5.04391%)
+Only type correct: 2731.57s (7.37983%)
+All wrong: 3638.44s (9.82991%)
+Deleted chords: 255.504 s (0.690289%)
+
+Correct no-chords: 1031.81 s (2.78763%)
+Inserted chords: 1009.35 s (2.72694%)

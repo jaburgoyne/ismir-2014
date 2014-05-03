@@ -1,0 +1,8 @@
+List: "BillboardTest2012.lst"
+
+**********************
+* Segmentation Inner *
+**********************
+Directional Hamming measure: 0.782426
+Under-segmentation: 0.181889
+Over-segmentation: 0.13942

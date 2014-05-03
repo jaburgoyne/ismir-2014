@@ -1,0 +1,16 @@
+List: "BillboardTest2012.lst"
+
+********************
+* Chords MirexRoot *
+********************
+Duration of evaluated symbols: 39847.8 s
+Average score: 77.3751%
+
+Correct chords: 30149s (75.6602%)
+Only root correct: 0s (0%)
+Only type correct: 7579.44s (19.021%)
+All wrong: -1.36424e-11s (-3.42363e-14%)
+Deleted chords: 78.2685 s (0.196419%)
+
+Correct no-chords: 683.343 s (1.71488%)
+Inserted chords: 1357.82 s (3.40751%)

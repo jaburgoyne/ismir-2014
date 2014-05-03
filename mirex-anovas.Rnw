@@ -1,0 +1,1060 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[colorlinks,citecolor=red]{hyperref}
+\urlstyle{rm}
+
+\usepackage[utf8]{inputenc}
+\usepackage[british]{babel}
+\addto\extrasbritish{%
+  \def\sectionautorefname{Section}%
+}
+\usepackage{csquotes}
+
+\usepackage[charter, uppercase=upright]{mathdesign}
+\usepackage{amsmath}
+\usepackage{vector}
+\renewcommand*{\vec}[1]{\ensuremath{\boldsymbol{\bvec{#1}}}}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+
+\usepackage{natbib}
+
+\usepackage{subcaption} 
+% knitr requires a command for subfig compatibility
+\newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
+
+\title{Comparative Statistics for MIREX ACE}
+\author{John Ashley Burgoyne}
+\date{1 December 2013}
+
+\begin{document}
+
+<<global-opts, cache=FALSE, echo=FALSE>>=
+library(knitr)
+options(width=61)
+opts_chunk$set(tidy=FALSE, fig.align="center", cache=TRUE, autodep=TRUE)
+@ 
+
+\maketitle
+
+\section{Introduction}
+
+Traditionally, Friedman's test was used to identify the
+differences among algorithms for audio chord estimation (ACE) in
+MIREX. The advantage of Friedman's test is that it is
+non-parametric, but that advantage comes with some undesirable
+costs. First, like any non-parametric test, Friedman's test is
+likely to be less powerful statistically than an appropriate
+parametric test. Second, because Friedman's test relies on ranks
+-- in the case of ACE the per-song ranks of each algorithm's
+performance -- it yields statistics on a scale that is somewhat
+awkward to interpret and can provide no information about the
+relative performance of different algorithms. In addition to this
+drawbacks from its non-parametric form, the traditional test (and
+thus the implementations available in most statistical software
+today) do not allow for weighting songs by their length; without
+such weighting, appropriateness of Friedman's test for analysing
+weighted chord symbol recall (WCSR) is questionable.
+
+There are, however, parametric tests based on logistic regression that
+can handle length-weighting for songs and operate on the WCSR
+scale. This document will explain the basics behind these tests and
+demonstrate how they can be used for analysing the ACE results from
+MIREX 2013. \autoref{sec:prep} pulls the results archives into an R
+environment for analysis. \autoref{sec:marginal} describes and
+motivates my recommendation for a statistical model to compare chord
+recognition algorithms, based on a variant of logistic
+regression. \autoref{sec:conditional} highlights some alternative
+models that might be useful for other research questions but seem less
+appropriate for comparing ACE algorithms. Finally,
+\autoref{sec:conclusion} summarises the present situation with
+evaluation statistics and recommendations for the future.
+
+\section{Preparing the Analysis}\label{sec:prep}
+
+The code in this document assumes that one is operating from a
+directory containing the three extracted archives of detailed
+statistical reports from MIREX ACE 2013, viz., folders named
+\texttt{MirexChord2009} for the Isophonics set and
+\texttt{BillboardTest2012} and \texttt{BillboardTest2013} for the
+McGill \emph{Billboard} test sets from 2012 and 2013.
+
+\subsection{Dependencies}
+
+Before beginning, one must load a few dependencies.
+
+<<dependencies, results="hide">>=
+library(boot)     # inv.logit()
+library(car)      # contr.Sum(): more readable contr.sum()
+library(geepack)  # geeglm() for GEEs
+library(aod)      # vcov.geeglm(): needed for Tukey tests
+library(hglm)     # hglm() for beta-binomial regression
+library(multcomp) # glht() and mcp() for Tukey tests
+@ 
+
+\subsection{Constants}
+
+One also must set a few constants for the data sets used to evaluate
+ACE in 2013, the submitted algorithms, the vocabularies evaluated for
+WCSR, the full set of analyses (viz., WCSR for each vocabulary plus
+the mean segmentation measure), and some variable names for the
+corresponding song durations to use for each analysis.
+
+<<constants>>=
+DATA.SETS <- c("MirexChord2009", 
+               "BillboardTest2012", "BillboardTest2013")
+## Algorithms in order of SeventhsBass performance.
+ALGOS <- c("KO2", "NMSD2", "CB4", "NMSD1", "CB3", "KO1", 
+           "PP4", "PP3", "CF2", "NG1", "NG2", "SB8")
+VOCABS <- c("Root", 
+            "MajMin", "MajMinBass", 
+            "Sevenths", "SeventhsBass")
+ANALYSES <- c(VOCABS, 
+              "Segmentation")
+DURATIONS <- c(sapply(VOCABS, 
+                      function (x) paste0("Dur", x)),
+               list(Segmentation = "DurRoot"))
+@ 
+
+\subsection{Reading the Result Archives}
+
+Finally, one must read the results into R. First, one needs a function
+to read the results for a particular WCSR vocabulary or for
+segmentation. It assumes that it will run from within the base
+directory.
+
+<<read-results>>=
+read.results <- function (analysis) {
+  isSeg <- analysis == "Segmentation"
+  cnames <- c()
+  cclasses <- c()
+  if (isSeg) {
+    setwd("resultsSegmentation")
+    cnames <- c("Song", "", "UnderSeg", "OverSeg")
+    cclasses <- c("factor", "NULL", "numeric", "numeric")
+  } else {
+    setwd(paste0("resultsMirex", analysis))
+    cnames <- c("Song", 
+                analysis, 
+                paste0("Dur", analysis), 
+                rep("", 6))
+    cclasses <- 
+        c("factor", "numeric", "numeric", rep("NULL", 6))
+  }
+  results <- data.frame()
+  for (algo in ALGOS) {
+    algo.results <- read.table(paste0(algo, ".csv"),
+                               skip = 2,
+                               header = FALSE,
+                               sep = ",",
+                               dec = ".",
+                               col.names = cnames, 
+                               colClasses = cclasses)
+    if (isSeg) {
+      ## Replace over- and under-segmentation with the 
+      ## harmonic mean of their arithmetic inverses.
+      algo.results$Segmentation <-
+        1 / (0.5 * (1/(1-algo.results$UnderSeg) + 
+                    1/(1-algo.results$OverSeg)))
+      algo.results$OverSeg <- c()
+      algo.results$UnderSeg <- c()
+    } else {
+      ## Rescale RCO results back to [0, 1].
+      algo.results[,2] <- algo.results[,2]/100
+    }
+    results <- 
+        rbind(results, 
+              cbind(Algo = rep(algo, dim(algo.results)[1]),
+                    algo.results))
+  }
+  setwd("..")
+  return(results)
+}
+@ 
+
+Next one needs a function to read all of the evaluation results for a
+particular data set.
+
+<<read-all-results>>=
+read.all.results <- function (data.set) {
+  setwd(data.set)
+  results <- Reduce(function (x, y) merge(x, y, all=TRUE),
+                    lapply(ANALYSES, read.results))
+  ## Order the Algo factor for easier comparisons.
+  results$Algo <- factor(results$Algo, levels=ALGOS)
+  ## Set the contrasts such that they represent differences 
+  ## from the grand average.
+  contrasts(results$Song) <- 
+      contr.Sum(levels(results$Song))
+  contrasts(results$Algo) <- 
+      contr.Sum(levels(results$Algo))
+  setwd("..")
+  return(results)
+}
+@ 
+
+Finally, one can store the complete set of evaluation results into
+a named list per data set.
+
+<<results>>=
+results <- 
+    sapply(DATA.SETS, read.all.results, simplify=FALSE)
+@ 
+
+\section{Marginal Models}\label{sec:marginal}
+
+Most of the results for ACE are CSR values: the proportion of a song's
+duration where the output of an algorithm matches the ground truth,
+excluding any segments of a song where the ground truth is out of
+vocabulary. Likewise, because of how the new segmentation measure is
+normalised, the segmentation results also behave and can be
+interpreted as proportions. Proportions cannot be distributed normally
+because they are supported exclusively on $[0, 1]$, and thus they
+present challenges for traditional techniques of statistical analysis.
+
+\subsection{Logistic Regression}
+
+One way around these challenges is, of course, Friedman's test, which
+removes any assumptions about the distribution at the cost of a loss
+in statistical power. An alternative solution is to use \emph{logistic
+  regression} or the \emph{logit model}, which is designed to handle
+proportions naturally without losing the simplicity of the usual
+linear function relating parameters and covariates
+\citetext{\citealp[ch.~5]{McCullaghNelder1989};
+  \citealp[ch.~4]{Agresti2007}}:
+\begin{equation}
+  \label{eq:logit1}
+  \pi(\vec{x}; \vec{\betaup}) = 
+  \frac{\mathrm{e}^{\vec{x}'\vec{\betaup}}}
+  {1 + \mathrm{e}^{\vec{x}'\vec{\betaup}}}
+  \ ,
+\end{equation}
+or equivalently
+\begin{equation}
+  \label{eq:logit2}
+  \log \frac{\pi(\vec{x}; \vec{\betaup})}{1-\pi(\vec{x}; \vec{\betaup})} = \vec{x}'\vec{\betaup}
+  \ ,
+\end{equation}
+where $\pi(\vec{x}; \vec{\betaup})$ represents the relative frequency
+of \enquote{success} given the values of covariates in $\vec{x}$ and
+parameters $\vec{\betaup}$. In the case of a basic model for MIREX
+ACE, $\vec{x}$ would identify the algorithm and $\pi(\vec{x};
+\vec{\betaup})$ would be the relative frequency of correct chord
+labels for that algorithm, viz., WCSR.
+
+Take, for example, CSR on the \emph{Billboard} 2013 test set using the
+vocabulary including seventh chords and inversions. One can fit the
+logit model for these data in R as follows. (We'll return to the
+warning message later.) 
+
+<<naive-logit>>=
+fit.naive <- glm(SeventhsBass ~ Algo, 
+                 data = results$BillboardTest2013,
+                 family = binomial(link="logit"))
+@ 
+
+The predictions from \texttt{fit.naive}, however, do not quite match
+the evaluation results. They are the simple arithmetic means of the
+per-song CSR values for each algorithm rather than the WCSR.
+
+<<naive-logit-predict>>=
+predict(fit.naive, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type = "response")
+@ 
+
+One can fix this problem by adding a \texttt{weights} argument to our
+fit. These predictions match the WCSR values exactly, and a
+$\chi^2$-test shows that there are indeed significant differences
+among algorithms ($p < .001$).
+
+<<one-way>>=
+fit.one <- glm(SeventhsBass ~ Algo, 
+               data = results$BillboardTest2013,
+               family = binomial(link="logit"),
+               weights = DurSeventhsBass)
+predict(fit.one, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type = "response")
+anova(fit.one, test="Chisq")
+@ 
+
+Let's return to the meaning of the warning messages. As mentioned
+above, $\pi(\vec{x}; \vec{\betaup})$ in a logit model is a relative
+frequency of success. Logistic regression fits this model to $M$
+discrete observations $y_i$ of success or failure, $i \in \{1, 2,
+\ldots, M\}$, assuming that these observations are conditionally
+independent given the corresponding observed values $\vec{x}_i$ of the
+covariates. In the case of data like the ACE results, where there are
+proportions $p_i$ rather than binary successes or failures, and the
+$n_i$ are the corresponding values in \texttt{weights}, R assumes that
+each $p_i$ represents the observed proportion of successes among $n_i$
+conditionally-independent binary observations, or more formally, that
+the $p_i$ are distributed binomially:
+\begin{equation}
+  \label{eq:binomial}
+  f_{P \mid N, \vec{X}}(p_i \mid n_i, \vec{x}_i; \vec{\betaup}) = 
+  \binom{n_i}{p_i n_i} 
+  \pi(\vec{x}_i; \vec{\betaup})^{p_i n_i} 
+  \left[1 -\pi(\vec{x}_i; \vec{\betaup})\right]^{(1 - p_i) n_i}
+  \ .
+\end{equation}
+The expected value for each $p_i$ is naturally $\pi(\vec{x}_i;
+\vec{\betaup})$, the overall relative frequency of success given
+$\vec{x}_i$:
+\begin{equation}
+  \label{eq:E}
+  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
+  \pi(\vec{x}; \vec{\betaup})\ .
+\end{equation}
+Under the frame-based evaluation schemes for ACE in previous years,
+the $n_i$ would have naturally been the number of evaluation frames
+per song; under the new continuous evaluation scheme, it is impossible
+to discretise the analysis in such a way that there will always be
+integral counts of \enquote{success} and \enquote{failure}
+frames. Fortunately, R is able to handle non-integral weights and
+success counts using the usual $\Gamma$-function generalisation of the
+\enquote{choose} function to real numbers. The warning serves only
+flag this somewhat unusual situation: for many applications of
+logistic regression, non-integral counts would be symptomatic of an
+error in the data or the specification of the model.
+
+Logistic regression models are typically fit by the maximum-likelihood
+technique, i.e., one is seeking a vector $\vec{\hat{\betaup}}$ to
+maximise the log-likelihood given the data:
+\begin{multline}
+  \label{eq:loglik}
+  \ell_{P \mid N, \vec{X}}
+  (\vec{\betaup}; \vec{p}, \vec{n}, \vec{X}) = \\
+  \sum_i \left\{
+    \log \binom{n_i}{p_i n_i} +
+    p_i n_i \log \pi(\vec{x}_i; \vec{\betaup}) +
+    (1 - p_i) n_i \log \left[1 -\pi(\vec{x}_i; \vec{\betaup})\right]
+  \right\}.
+\end{multline}
+One thus solves the system of likelihood equations for
+$\vec{\betaup}$, whereby the gradient of equation (\ref{eq:loglik}) is
+set to zero:
+\begin{equation}
+  \label{eq:gradient}
+  \nabla_{\vec{\betaup}}
+  \ell_{P \mid N, \vec{X}} 
+  (\vec{\betaup}; p_i, n_i, \vec{x}_i) =
+  \sum_i 
+  \left[p_i - \pi(\vec{x}_i; \vec{\betaup}) \right]
+  n_i \vec{x}_i = \vec{0}
+\end{equation}
+and so
+\begin{equation}
+  \label{eq:betahat}
+  \sum_i p_i n_i \vec{x}_i = 
+  \sum_i \pi(\vec{x}_i; \vec{\betaup}) n_i \vec{x}_i\ .
+\end{equation}
+In the case of MIREX ACE evaluation, $\vec{x}_i$ is simply an
+indicator vector that partitions the data by algorithm, and thus
+$\vec{\hat{\betaup}}$ is the parameter vector for which
+$\pi(\vec{x}_i; \vec{\betaup})$ equals the weighted mean of the $p_i$
+for the corresponding algorithm.
+
+\subsection{Quasi-Likelihood}
+
+One might still wonder whether the scale of the weights $\vec{n}$ is
+important. Is the length of the song in seconds sufficient, or
+is it important to use more specific information about audio frame
+lengths and hop sizes?  For the purposes of fitting a logit model, it
+makes no difference: one can see from equation (\ref{eq:betahat}) that
+if one were to multiply $\vec{n}$ by any constant, these constants
+would cancel each other from each side of the equation and thus yield
+identical estimates $\vec{\hat{\betaup}}$ and in turn identical
+prediction functions $\pi(\cdot; \vec{\hat{\betaup}})$. 
+
+The weights are unfortunately not scale-invariant, when it comes to
+the variance of observations under the resulting fit. Under the logit
+model, the variance of each $p_i$ is inversely proportional to $n_i$:
+\begin{equation}
+  \label{eq:var}
+  \var\left[P \mid N, \vec{X}\right] = 
+  \left(\frac{1}{n}\right)
+  \pi(\vec{x}; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \ .
+\end{equation}
+These variances are the basis for estimating standard errors and
+generating confidence intervals for the model and its predictions, and
+thus for the purposes of comparative statistics on WCSR values, one
+must ensure that the $n_i$ are scaled appropriately. In particular,
+the $n_i$ should be the exact number of audio frames that the
+algorithm $\vec{x}_i$ used to produce its estimations.
+
+There is a more serious problem with the variance of WCSR estimates,
+however, that subsumes the scaling issue. Equation (\ref{eq:var}) is
+based on the assumption that the estimates of chord labels for each
+audio frame are independent; if there is a positive correlation among
+the frames, the variance of the $p_i$ will be somewhat larger. Only
+the most naive of chord-recognition algorithms, however, treat every
+frame independently: some kind of time-dependence structure is
+standard, most frequently a hidden Markov model or some close
+derivative thereof. Hence one should expect that the variance of WCSR
+would be rather larger than the basic logit model would suggest.  This
+type of problem is extremely common across disciplines, so much so
+that is has been given a name, \emph{over-dispersion}, and McCullagh
+and Nelder go so far as to state that
+\blockquote[{\citeyear[p.~125]{McCullaghNelder1989}}]{unless there are
+  good external reasons for relying on the binomial assumption [of
+  independence], it seems wise to be cautious and to assume that
+  over-dispersion is present to some extent unless and until it is
+  shown to be absent}.
+
+One standard approach to handling over-dispersion is to use a
+so-called \emph{quasi-likelihood}
+\citetext{\citealp[\S\S~4.5 \&~9.2]{McCullaghNelder1989};
+  \citealp[\S~4.7]{Agresti2007}}. In case of logistic regression, this
+typically entails a modification to the assumption on the distribution
+of the $p_i$ that includes an additional \emph{dispersion parameter}
+$\phi$:
+\begin{equation}
+  \label{eq:quasi-E}
+  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
+  \pi(\vec{x}; \vec{\betaup})
+\end{equation}
+as before, but
+\begin{equation}
+  \label{eq:quasi-var}
+  \var\left[P \mid N, \vec{X}\right] \triangleq 
+  \left(\frac{\phi}{n}\right)
+  \pi(\vec{x}; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \ .
+\end{equation}
+These models are known as quasi-likelihood models because one loses a
+closed-form solution for the actual probability distribution $f_{P
+  \mid N, \vec{X}}$; one knows only that the $p_i$ behave something like
+binomially-distributed variables, with identical means but
+proportionally more variance. The parameter estimates
+$\vec{\hat{\betaup}}$ and predictions $\pi(\cdot;
+\vec{\hat{\betaup}})$ for a quasi-binomial model are the same as
+ordinary regression, but the estimated variance-covariance matrices
+are scaled by the estimated dispersion parameter $\hat{\phi}$ (and
+likewise the standard errors are scaled by its square root). The
+dispersion parameter is estimated so that the theoretical variance
+matches the empirical variance in the data, and because of the form of
+equation~(\ref{eq:quasi-var}), it renders any scaling considerations
+for the $n_i$ moot.
+
+Quasi-binomial models are almost as easy to fit in R as ordinary logit
+models: one simply uses \texttt{quasibinomial()} in place of
+\texttt{binomial()} in the \texttt{family} argument to
+\texttt{glm()}. Let's return to the example of WCSR for seventh chords
+and inversions on the \emph{Billboard} 2013 test set. The
+quasi-binomial predictions are indeed the same as the predictions from
+the standard logit model.
+
+<<quasi-one-way>>=
+quasi.fit.one <- glm(SeventhsBass ~ Algo, 
+                     data = results$BillboardTest2013,
+                     family = quasibinomial(link="logit"),
+                     weights = DurSeventhsBass)
+predict(quasi.fit.one, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type="response")
+@ 
+
+The standard errors, however, are somewhat higher.
+
+<<one-way-se>>=
+predict(fit.one, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type = "response",
+        se.fit = TRUE)$se.fit
+predict(quasi.fit.one, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type = "response",
+        se.fit = TRUE)$se.fit
+@
+
+It is clear even from seeing the differences in the standard errors
+that it is important to correct for over-dispersion. In the absence of
+over-dispersion, the estimated dispersion parameter should be unity,
+but in the case of this model, it is $43$. And this was without even
+trying to scale the weights to reflect a realistic number of analysis
+frames for each algorithm. If we did so, the estimated dispersion
+parameter would be even higher!
+
+<<dispersion>>=
+summary(quasi.fit.one)$dispersion
+@ 
+
+Because the dispersion parameter is estimated in quasi-binomial
+models, a chi-squared test is no longer appropriate for making
+comparisions between models; one must use an $F$-test instead
+\citep[\S~7.5]{VenablesRipley2002}. Unsurprisingly, an $F$-test of the
+quasi-binomial model still shows a significant effect of algorithm on
+WCSR ($p < .001$).
+
+<<F-one>>=
+anova(quasi.fit.one, test="F")
+@ 
+
+\subsection{Goodness of Fit}
+
+Formal tests are difficult to come by for the goodness of fit of
+quasi-likelihood models. Informal diagnostic plots, however, are still
+useful for identifying any systematic departures from a model.
+
+<<plot-code, fig.keep="none">>=
+plot(quasi.fit.one)
+@ 
+
+<<diagnostics, echo=FALSE, fig.show="hold", fig.width=4, fig.height=5.5, out.width="0.45\\linewidth", fig.cap="Diagnostic plots for a quasi-binomial fit to WCSR values from MIREX 2013 on the sevenths-and-inversions vocabulary. They show an acceptable fit, with possible outliers at observations 621, 708, 812, 973, 1617, and 1862.", fig.subcap=c("Residuals vs.\ Predicted Values", "Normal Q-Q (Residuals)", "Scale-Location", "Residuals vs.\ Leverage")>>=
+plot(quasi.fit.one, caption="", sub.caption="")
+@ 
+
+\autoref{fig:diagnostics} shows the standard diagnostic plots from
+R for our quasi-binomial fit. \autoref{fig:diagnostics1} shows the
+residuals against the predicted values in the logit (log-odds)
+space. One is hoping not to see a discernible trend, and indeed, there
+are none, although observations 708, 812, and 1617 are flagged as
+having particularly large residuals. \autoref{fig:diagnostics2}
+shows the quantiles a different kind of residual, the \emph{deviance
+  residual}, against the theoretical quantiles of a normal
+distribution. Deviance residuals should be distributed approximately
+normally, and thus one is hoping to see all of the points fall closely
+along the line. In this case, there seems to be a divergence for
+strongly negative residuals, but according to Agresti, this is not of
+great concern: \textquote[{\citeyear[p.~221]{Agresti2007}}]{When
+  fitted values are very small, however, just as $X^2$ and $G^2$ [two
+  statistics for model comparison] lose relevance, so do
+  residuals}. \autoref{fig:diagnostics3} is similar to
+\autoref{fig:diagnostics1}, but it plots the square root of a
+standardised deviance residual against the predicted values, as a
+measure of whether the scale of the residuals changes alongside
+predictions. Again, one is hoping to see no trend, and there does not
+seem to be an important one. Observations 812, 973, and 1617, however,
+are flagged as having residuals of particularly great
+magnitude. \autoref{fig:diagnostics4} plots yet another kind of
+residual, \emph{Pearson's residual}, against statistical
+leverage. Statistical leverage is not a particularly useful concept
+for these data, but the plot is helpful for flagging three
+observations with unusually large values of Pearson's residual: 621,
+1617, and 1862. Pearson's residuals are scaled by the expected
+variance, and so they represent observations that may not be far from
+the predictions in absolute terms but are nonetheless quite far from
+where one should expect them to be.
+
+A closer look at the six potential outliers suggests that none of them
+are of serious concern. Observations 708, 812, 973, and 1617 are
+simply instances where algorithms did extremely poorly. Although these
+observations may be of interest for the authors of the algorithms,
+because they are above zero, there is no reason to believe that they
+are erroneous. Observation 1862 is an observation where algorithm SB8
+did exceptionally well for its otherwise low average, but not so well
+that it suggests an error. Observation 1499 is not extremely low, but
+it is still quite low for an otherwise high-performing algorithm. It
+was marked as an outlier solely by Pearson's residuals, no doubt
+because the length of the song caused a lower expected variance.
+
+<<outliers>>=
+quasi.fit.one$data[c(621, 708, 812, 973, 1617, 1862), 
+                   c("Algo", "Song", 
+                     "SeventhsBass", "DurSeventhsBass")]
+@
+
+\subsection{Generalised Estimating Equations}
+
+The quasi-binomial model achieves most of what one would be looking
+for when evaluating ACE for MIREX: it handles proportions naturally,
+is consistent with the weighted averaging used to compute WCSR,
+adjusts for over-dispersion in a way that also eliminates any worries
+about scaling the weights, and above all, it seems to fit the data
+well. Nonetheless, the quasi-binomial is slightly over-conservative
+for evaluating ACE. As discussed earlier, quasi-binomial models are
+necessary to account for over-dispersion, and one important source of
+over-dispersion in these data is the lack of independence of chord
+estimates from most algorithms within the same song. There is another
+important violation of the independence assumption, however. All
+algorithms are tested on the same sets of songs, and some songs are
+clearly more difficult than others; put differently, one does not
+expect the algorithms to perform completely independently of one
+another on the same song but rather expects a certain correlation in
+performance across the set of songs. By taking that correlation into
+account, one can improve the precision of estimates, particularly the
+precision of pair-wise comparisons \citep[see][\S~10.1]{Agresti2007}.
+
+A relatively straightforward variant of quasi-likelihood known as
+\emph{generalised estimating equations} (GEEs) incorporates this type
+of correlation \citetext{\citealp[\S~9.3]{McCullaghNelder1989};
+  \citealp[ch.~11]{Agresti2007}}. With the GEE approach, rather than
+predicting each $p_i$ individually, one predicts complete vectors of
+proportions $\vec{p}_i$ for each relevant group, much as Friedman's
+test seeks to estimate ranks within each group. For example, for ACE,
+the groups would be songs, and thus one would consider the
+observations to be vectors $\vec{p}_i$, one for each song, where
+$p_{ij}$ represented the CSR or segmentation score for algorithm $j$
+on song $i$. Analogous to the case of ordinary quasi-binomial or
+logistic regression,
+\begin{equation}
+  \label{eq:gee-E}
+  \mathbf{E}\left[P_j \mid N, \vec{X}_j\right] =
+  \pi(\vec{x}_j; \vec{\betaup})\ .   
+\end{equation}
+Likewise, analogous to the quasi-binomial variance estimate,
+\begin{equation}
+  \label{eq:gee-var}
+  \var\left[P_j \mid N, \vec{X}_j\right] \triangleq 
+  \left(\frac{\phi}{n}\right)
+  \pi(\vec{x}_j; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}_j); \vec{\betaup})\right]
+  \ .
+\end{equation}
+Because the GEE approach is concerned with vector-valued estimates
+rather than point estimates, it also involves estimating a full
+variance-covariance matrix. In addition to $\vec{\betaup}$ and $\phi$,
+the approach requires a further vector of parameters $\vec{\alphaup}$
+and an \emph{a priori} assumption on correlation structure of the
+$P_j$ in the form of a function $R(\vec{\alphaup})$ that yields a
+correlation matrix. (One might, for example, assume that that the
+$P_j$ are \emph{exchangeable}, i.e., that every pair shares a common
+correlation coefficient.) Then if $B$ is a diagonal matrix such that
+$B_{jj} \triangleq \var\left[P_j \mid N, \vec{X}_j\right]$,
+\begin{equation}
+  \label{eq:gee-cov}
+  \cov\left[P \mid N, \vec{X}\right] \triangleq
+  B^{1/2} R(\vec{\alphaup}) B^{1/2}\ .
+\end{equation}
+If all of the $P_j$ are uncorrelated with each other, then this
+formula reduces to the basic quasi-binomial model, which assumes a
+diagonal covariance matrix. The final step of GEE estimation adjusts
+equation~(\ref{eq:gee-cov}) according to the actual correlations
+observed in the data, and as such, GEE is quite robust in practice
+even when the \emph{a priori} assumptions about the correlation
+structure are incorrect \citep[\S~11.4.2]{Agresti2007}.
+
+In the case of our example of WCSR for the sevenths-and-inversions
+vocabulary, GEE reveals substantial correlation among algorithms -- $r
+= 0.62$ on average -- and takes this into account without altering the
+model predictions. A statistic known as the Wald statistic is usually
+used to compare models \citep[\S~11.3.1]{Agresti2007}, and again,
+algorithm is shown to have a significant effect on WCSR ($p < .001$).
+
+<<gee>>=
+gee.fit.one <- geeglm(SeventhsBass ~ Algo, 
+                      ## geeglm() requires group sorting
+                      data = results$BillboardTest2013[
+                          order(results$
+                                BillboardTest2013$
+                                Song),],
+                      family = binomial(link="logit"),
+                      corstr = "exchangeable",
+                      weights = DurSeventhsBass,
+                      id = Song)
+gee.fit.one$geese$alpha
+predict(gee.fit.one, 
+        data.frame(row.names=ALGOS, Algo=ALGOS), 
+        type = "response")
+anova(gee.fit.one)
+@ 
+
+The value of the GEE approach comes when making pair-wise comparisions
+between algorithms. Let's examine pair-wise WCSR comparisons for each
+algorithm from the basic quasi-binomial model and from the GEE model.
+
+<<cld, fig.show="hold", fig.width=11, fig.height=5.5, out.width="\\linewidth", fig.cap="Compact letter displays  for the quasi-binomial and GEE fits to WCSR values from MIREX 2013 on the sevenths-and-inversions vocabulary. Given the models, there are insufficient data to distinguish among algorithms sharing the same letter at $\\alpha = 0.005$. Because algorithms are highly correlated with each other within songs, the GEE approach is able to make finer distinctions between algorithms.", fig.subcap=c("Quasi-Binomial", "GEE")>>=
+quasi.comps.one <- glht(quasi.fit.one, mcp(Algo = "Tukey"))
+gee.comps.one <- glht(gee.fit.one, mcp(Algo = "Tukey"))
+## Extra margin space is necessary for CLD plots.
+par(mar=c(5, 4, 10, 2))
+plot(cld(quasi.comps.one, level = 0.005))
+plot(cld(gee.comps.one, level = 0.005))
+@ 
+
+\autoref{fig:cld} presents \emph{compact letter displays} for each
+of these fits. If two algorithms share the same letter, any letter,
+then there is insufficient evidence under the model to distinguish
+them. Comparisons were corrected family-wise against multiple
+comparisons using Tukey's \enquote{honest significant difference} test
+at $\alpha = .005$, i.e., by following such a procedure, only one out
+of every 200 times should any figure identify any significant
+differences between a pair or pairs where there is
+none.\footnote{Recent work has suggested that the traditional
+  confidence level of $\alpha = .05$ is too lax a filter for
+  reproducible scientific results and recommends $\alpha = .005$
+  whenever there are sufficient data available
+  \citep{Johnson2013}. Cf.~\citet{Huron1999}, who argues that $\alpha
+  = .05$ is rather too ambitious for data-poor disciplines like music,
+  but data poverty is not a problem for MIREX.} The difference between
+the two approaches is stark: a basic quasi-likelihood model cannot
+distinguish among the top eight algorithms (the first algorithm that
+can be distinguished from KO2 is CF2), whereas the leading group under
+the GEE model contains only five algorithms (the first algorithm that
+can be distinguished from KO2 is KO1). Each subfigure also provides a
+boxplots of actual WCSR values for each algorithm.
+
+The data for each pairwise comparison are also available in tabular
+form. Each line of output represent a comparison between two
+algorithms, ending with a $p$-value on its statistical significance,
+again corrected for multiple comparisons using Tukey's test.
+
+\begin{small}
+<<gee-tukey>>=
+summary(gee.comps.one)
+@ 
+\end{small}
+
+The tables are somewhat difficult to interpret, however, because the
+differences between algorithms are taken with respect to the linear
+predictor $\vec{x}'\vec{\betaup}$ rather than the predicted values
+$\pi(\vec{x}; \vec{\betaup})$. It is a little easier to interpret the
+results as exponentiated confidence intervals. From equation~(\ref{eq:logit2}), one can see that exponentiating a
+difference in predictions $\vec{x}_i'\vec{\hat{\betaup}} -
+\vec{x}_j'\vec{\hat{\betaup}}$ yields an \emph{odds ratio}
+\begin{equation}
+  \label{eq:odds-ratio}
+  \frac{\pi(\vec{x}_i; \vec{\hat{\betaup}}) / 
+    \left[1 - \pi(\vec{x}_i; \vec{\hat{\betaup}})\right]}
+  {\pi(\vec{x}_j; \vec{\hat{\betaup}}) / 
+    \left[1 - \pi(\vec{x}_j; \vec{\hat{\betaup}})\right]}
+\end{equation} 
+If an odds ratio is greater than unity, then algorithm $\vec{x}_i$ is
+more powerful than algorithm $\vec{x}_j$, and vice-versa if an odds
+ratio is less than unity. Intuitively, one can think of these values
+as the performance of algorithm $\vec{x}_i$ in proportion to the
+performance of $\vec{x}_j$. If a confidence interval contains unity,
+then there is insufficient evidence to claim that there is any
+difference between the two.
+
+<<exp-gee-tukey>>=
+exp(confint(gee.comps.one, level = .995)$confint)
+@ 
+
+The source for this document contains a function \texttt{plot.odds} to
+plot the confidence intervals for every odds ratio, but such figures
+are probably not as useful a summary as the compact letter
+displays. See \autoref{fig:plot-odds}.
+  
+<<plot-odds-function, echo=FALSE>>=
+## Draft function for plotting results. Based on plot.glht, which is
+## in turn based on plot.TukeyHSD.
+plot.odds <- function(y, xlim, xlab, ylim, ...) {
+    x <- confint(y)
+    xi <- exp(x$confint)
+    dimnames(xi)[[1]] <- sub("-", "/", dimnames(xi)[[1]])
+    ### make sure one-sided intervals are drawn correctly
+    xrange <- c(min(xi[,"lwr"]), max(xi[, "upr"]))
+    if (!is.finite(xrange[1])) xrange[1] <- min(xi[,"Estimate"])
+    if (!is.finite(xrange[2])) xrange[2] <- max(xi[,"Estimate"])
+    yvals <- nrow(xi):1
+    if (missing(xlim))
+        xlim <- xrange
+    if (missing(ylim))
+        ylim <- c(0.5, nrow(xi) + 0.5)
+    plot(c(xi[, "lwr"], xi[, "upr"]), rep.int(yvals, 2), 
+         type = "n", axes = FALSE, xlab = "", ylab = "", 
+         xlim = xlim, ylim = ylim, ...)
+    axis(1, ...)
+    axis(2, at = nrow(xi):1, labels = dimnames(xi)[[1]], 
+         las = 1, ...)
+    abline(h = yvals, lty = 1, lwd = 1, col = "lightgray")
+    abline(v = 1, lty = 2, lwd = 1, ...)
+    left <- xi[, "lwr"]
+    left[!is.finite(left)] <- min(c(0, xlim[1] * 2))
+    right <- xi[, "upr"]
+    right[!is.finite(right)] <- max(c(0, xlim[2] * 2))
+    segments(left, yvals, right, yvals, ...)
+    points(xi[, "lwr"], yvals, pch = "(", ...)
+    points(xi[, "upr"], yvals, pch = ")", ...)
+    points(xi[, "Estimate"], yvals, pch = 20, ...)
+    main <- list(...)$main
+    if (is.null(main)) {
+        if (attr(x, "type") == "adjusted") {
+            main <- paste(format(100 * attr(x$confint, "conf.level"), 2), 
+                          "% Family-Wise Confidence Level\n", sep = "")
+        } else {
+            main <- paste(format(100 * attr(x$confint, "conf.level"), 2),
+                          "% Confidence Level\n", sep = "")
+        }
+    } else {
+        main <- NULL ### main was already plotted in plot() via ...
+    }
+    if (missing(xlab))
+          xlab <- "Odds ratio"
+    title(main = main, xlab = xlab)
+    box()
+}
+@ 
+
+<<plot-odds, hold=TRUE, fig.width=8, fig.height=12, out.width=NULL, out.height="0.75\\textheight", fig.cap="Odds ratios and confidence intervals between all algorithm pairs for WCSR on the sevenths-and-inversions vocabulary in MIREX 2013. This figure contains the same essential information as the compact letter display in \\autoref{fig:cld2}.">>=
+par(mar=c(5, 8, 4, 2))
+plot.odds(gee.comps.one)
+@ 
+
+\section{Conditional Models}\label{sec:conditional}
+
+The GEE approach is a type of so-called \emph{marginal model} because
+is estimates parameters that have been marginalised over the nuisance
+parameters, the difficulties of songs in the case of ACE. There are
+instances, however, when one might be as interested in the
+difficulties of the songs in addition to the performance of the
+algorithms. A detailed study of ACE in general, for example, might
+want to develop theories about audio or musical qualities that make
+chord recognition difficult and which algorithmic strategies best
+overcome them. For such questions, marginal models are insufficient.
+
+\subsection{Two-Way Factorial Model}
+
+The usual approach to modelling where there are potentially two
+causative factors is a factorial two-way model, which can work just as
+well with a logit model as it does with traditional normal models. In
+R, one simply adds a term to the model in the \texttt{glm()} command,
+\texttt{Song} in the case of our ACE example. The same over-dispersion
+and scaling considerations apply in the two-way case as they do in the
+one-way case, and thus a quasi-binomial model is most appropriate. An
+$F$-test shows that, even conditional on the effect of algorithm on
+CSR, the song also has a significant effect on ($p < .001$).
+
+<<two-way>>=
+quasi.fit.two <- glm(SeventhsBass ~ Algo + Song, 
+                     data = results$BillboardTest2013,
+                     family = quasibinomial(link="logit"),
+                     weights = DurSeventhsBass)
+anova(quasi.fit.two, test="F")
+@ 
+
+There is no way to extract an overall WCSR from the two-way model,
+however. Because \texttt{Song} is built directly into the model, the
+closest one can come is to derive expected performance of each
+algorithm on a song of \enquote{average} difficulty. This average is
+taken in logit space, and so it is not the same as WCSR. In R,
+extracting these estimates involves using a particular choice of
+contrasts and a bit of manipulation.
+
+<<non-wcsr>>=
+N <- length(ALGOS)
+algo.coefs.two <- coef(quasi.fit.two)[2:N]
+# With sum-to-one contrasts, the coefficient for the last
+# algorithm is the inverse of the sum of all others.
+algo.coefs.two[N] <- -sum(algo.coefs.two)
+algo.coefs.two <- algo.coefs.two + coef(quasi.fit.two)[1]
+names(algo.coefs.two) <- ALGOS
+inv.logit(algo.coefs.two)
+@ 
+
+These estimates are similar to the WCSR values, but are slightly lower
+overall. This phenomenon is typical of conditional models as compared
+to marginal models, although in most cases it does not have an effect
+on comparative statistics
+\citep[\S~12.2]{Agresti2007}. \autoref{fig:cld-two} shows a compact
+letter display for the two-way model, which is indeed similar to
+\autoref{fig:cld2}, although the GEE approach still seems to be able
+to make finer distinctions, perhaps because the variance is not in
+fact completely consistent across algorithms, which the two-way model
+assumes. Because it needs to take into account the formal model for
+songs, \autoref{fig:cld-two} also displays predicted CSR values for
+each song rather than actual CSR values.
+
+<<cld-two, fig.show="hold", fig.width=11, fig.height=5.5, out.width="\\linewidth", fig.cap="Compact letter display for a two-way quasi-binomial fit to WCSR values from MIREX 2013 on the sevenths-and-inversions vocabulary. Given the models, there are insufficient data to distinguish among algorithms sharing the same letter at $\\alpha = 0.005$. The figure is similar to \\autoref{fig:cld2}, but the GEE approach is still able to make finer distinctions between algorithms than the two-way model.">>=
+quasi.comps.two <- glht(quasi.fit.two, mcp(Algo = "Tukey"))
+## Extra margin space is necessary for CLD plots.
+par(mar=c(5, 4, 10, 2))
+plot(cld(quasi.comps.two, level = 0.005))
+@ 
+
+\subsection{Random Effects}
+
+The two-way model seems to have little to recommend it for MIREX
+evaluation. It is harder to interpret, cannot extract WCSR values, and
+does not seem to be as powerful as the GEE approach because it makes
+an additional and implausible assumption that the variance in
+performance should be identical across algorithms. There is also a
+more serious statistical problem with the two-way model: because the
+only way to gather more data would be to use additional songs, which
+would then entail additional parameters, parameter estimates from
+two-way model are not consistent
+\citetext{\citealp[\S~7.1]{McCullaghNelder1989};
+  \citealp[\S~12.1.5]{Agresti2007}}. Songs are a \emph{random effect}
+here, arising by virtue of sampling, and they require special
+treatment.
+
+A random-effects model separates variance into two components: one
+portion arising from sampling clusters -- songs in the case of ACE --
+and another from unexplained aspects of the \emph{fixed effects} --
+algorithms in the case of ACE. The goal is similar to the GEE
+approach, but unlike the GEE approach, one must assume a specific
+distribution for the random effects in a random-effects model. In the
+case of binomial data, the beta distribution is the most logical
+choice, yielding a so-called \emph{beta-binomial model}. Note that the
+\texttt{hglm} command in R fits a quasi-likelihood model even when
+\texttt{family} is specified as \texttt{binomial()}.
+
+<<beta-binomial>>=
+beta.bin.fit <- hglm(fixed = SeventhsBass ~ Algo,
+                     random = ~ 1|Song,
+                     data = results$BillboardTest2013,
+                     family = binomial(link="logit"),
+                     rand.family = Beta(),
+                     weights = DurSeventhsBass)
+@ 
+
+The predictions from the random effects model are similar but again
+slightly different than true WCSR values. Again, they would be
+interpeted as CSR on an average song, average in this case being the
+centre of the estimated beta distribution over song difficulties.
+
+<<rand-wcsr>>=
+N <- length(ALGOS)
+fixed.coefs <- beta.bin.fit$fixef[2:N]
+# With sum-to-one contrasts, the coefficient for the last
+# algorithm is the inverse of the sum of all others.
+fixed.coefs[N] <- -sum(fixed.coefs)
+fixed.coefs <- fixed.coefs + beta.bin.fit$fixef[1]
+names(fixed.coefs) <- ALGOS
+inv.logit(fixed.coefs)
+@ 
+
+In principle, it is possible to make pairwise comparisons from a
+beta-binomial model, although there is no straightforward
+way to do so from within R. We will leave the model here for now,
+however. Although statistically correct and potentially interesting
+for some applications, the beta-binomial model maintains the
+interpretive drawbacks of the two-way model, introduces an extra
+assumption in the form of a beta distribution for random effects, and
+offers no clear benefits over the GEE approach for the purpose of
+evaluating and comparing the performance of algorithms. 
+
+\section{Conclusion}\label{sec:conclusion}
+
+Friedman's test, used to compare MIREX ACE algorithms in the past,
+is a \enquote{one size fits all} test that is applicable to a wide
+variety of problems. With more specific information about the data,
+however, it is possible to test more powerfully and, in many cases,
+more interpretably. In the case of the new evaluation measures for
+MIREX ACE, we do have more specific information about the data: all of
+the new measures can be interpreted as proportions. As such, a logit
+model is appropriate. After making corrections for over-dispersion and
+repeated measurements (i.e., the fact that the same songs are used
+evaluate each algorithm), the logit model can make powerful estimates
+of the difference in performance among algorithms.
+
+The handling of repeated measurements brings in the greatest question
+of taste. Friedman's test is one solution, but it breaks the link to
+CSR values and is unable to support weighting for different song
+lengths. A random-effects model like the beta-binomial model is
+another solution that can work with CSR values, but nonethless, such
+models are still unable to reproduce WCSR values
+directly. Random-effects models also introduce extra assumptions on
+the distribution of song difficulties that are not directly relevant
+to the evaluation of MIREX performance. A third option, the
+generalised-estimating-equation approach, seems to offer the best of
+both worlds. GEEs are able to work directly with CSR values while
+maintaining some of the freedom from distributional assumptions that
+is the hallmark of Friedman's test. GEEs are also able to estimate
+WCSR values directly.
+
+To conclude, this document includes code to fit GEEs to all of the
+results from MIREX ACE 2013. After compiling this document in a
+\texttt{knitr}-compatible environment such as Emacs with ESS or
+RStudio, these results should be available in the variable
+\texttt{ace.comps}.
+
+<<ace-comps, warning=FALSE>>=
+ace.compare <- function (dat) {
+    prefit <- glm(Results ~ Algorithm,
+                  data = dat,
+                  family = binomial(link = "logit"),
+                  weights = Duration)
+    ## Reorder the levels of the algorithm factor in 
+    ## descending order of performance in order to
+    ## facilitate pairwise comparisions. With 
+    ## sum-to-one contrasts, we can recover the value 
+    ## of the aliased last level from the arithmetic 
+    ## inverse of the sum of the coefficients for all
+    ## other levels.
+    N <- nlevels(dat$Algorithm)
+    algo.coefs <- coef(prefit)[2:N]
+    algo.coefs[N] <- -sum(algo.coefs)
+    dat$Algorithm <-
+        factor(dat$Algorithm,
+               levels = levels(dat$Algorithm)[
+                   order(algo.coefs, decreasing=TRUE)])
+    contrasts(dat$Algorithm) <- 
+        contr.Sum(levels(dat$Algorithm))
+    fit <- geeglm(Results ~ Algorithm, 
+                  ## geeglm() requires group sorting
+                  data = dat[order(dat$Song),],
+                  family = binomial(link="logit"),
+                  corstr = "exchangeable",
+                  weights = Duration,
+                  id = Song)
+    ## Compute the differences between all pairwise 
+    ## combinations of algorithms.
+    tuk <- glht(fit, mcp(Algorithm = "Tukey"))
+}
+
+ace.comps <-
+    sapply(results,
+           function (dat) {
+               sapply(ANALYSES,
+                      function (analysis) {
+                          ace.compare(
+                              data.frame(Results = 
+                                         dat[, analysis],
+                                         Song = 
+                                         dat$Song,
+                                         Algorithm = 
+                                         dat$Algo,
+                                         Duration = 
+                                         dat[, DURATIONS[[analysis]]]))
+                      },
+                      simplify = FALSE)
+           },
+           simplify = FALSE)
+@ 
+
+<<mirex09-results, fig.show="hold", fig.width=11, fig.height=5.5, out.width="0.5\\linewidth", fig.cap="Compact letter displays and boxplots for all MIREX 2013 ACE results on the Isophonics data, as fit with GEEs, $\\alpha = .005$.", fig.subcap=ANALYSES>>=
+par(mar=c(5, 4, 11, 2))
+for (analysis in ANALYSES)
+    plot(cld(ace.comps$MirexChord2009[[analysis]], 
+             level = .005))
+@ 
+
+<<bb12-results, fig.show="hold", fig.width=11, fig.height=5.5, out.width="0.5\\linewidth", fig.cap="Compact letter displays and boxplots for all MIREX 2013 ACE results on the \\emph{Billboard} test data from MIREX 2012, as fit with GEEs, $\\alpha = .005$.", fig.subcap=ANALYSES>>=
+par(mar=c(5, 4, 11, 2))
+for (analysis in ANALYSES) 
+    plot(cld(ace.comps$BillboardTest2012[[analysis]], 
+             level = .005))
+@ 
+
+<<bb13-results, fig.show="hold", fig.width=11, fig.height=5.5, out.width="0.5\\linewidth", fig.cap="Compact letter displays and boxplots for all MIREX 2013 ACE results on the new \\emph{Billboard} test data for MIREX 2013, as fit with GEEs, $\\alpha = .005$.", fig.subcap=ANALYSES>>=
+par(mar=c(5, 4, 11, 2))
+for (analysis in ANALYSES) 
+    plot(cld(ace.comps$BillboardTest2013[[analysis]], 
+             level = .005))
+@ 
+
+\begin{thebibliography}{9}
+
+\bibitem[Agresti(2007)]{Agresti2007} Agresti, Alan. 2007. \emph{Categorical Data
+    Analysis.} 2nd ed. Hoboken, NJ: Wiley. \href{http://dx.doi.org/10.1002/0471249688}{doi:10.1002/0471249688}
+
+\bibitem[Huron(1999)]{Huron1999} Huron, David. 1999. The new
+  empiricism: Systematic musicology in a post-modern age. Ernest Bloch
+  Lecture 3, University of California, Berkeley,
+  California. \url{http://www.music-cog.ohio-state.edu/Music220/Bloch.lectures/3.Methodology.html}
+  
+\bibitem[Johnson(2013)]{Johnson2013} Johnson, Valen E. Early
+  edition. Revised standard for statistical
+  inference. \emph{Proceedings of the National Academy of Sciences.}
+  \href{http://dx.doi.org/10.1073/pnas.1313476110}{doi:10.1073/pnas.1313476110}
+  
+\bibitem[McCullagh \& Nelder(1989)]{McCullaghNelder1989} McCullagh, Peter and John
+  A. Nelder. 1989. \emph{Generalized Linear Models.} Boca Raton,
+  FL: Chapman \& Hall/CRC.
+
+\bibitem[Venables \& Ripley(2002)]{VenablesRipley2002} Venables,
+  William N.\ and Brian D. Ripley. 2002. \emph{Modern Applied
+    Statistics with S.} 4th ed. New York:
+  Springer. \href{http://dx.doi.org/10.1007/978-0-387-21706-2}{doi:10.1007/978-0-387-21706-2}
+  
+\end{thebibliography}
+
+\end{document}
+
