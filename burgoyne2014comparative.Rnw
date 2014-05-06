@@ -21,7 +21,9 @@
 }
 
 \threeauthors
-  {First author} {Affiliation$1$ \\ {\tt author1@ismir.edu}}
+  {First author} {Affiliation$1$ \\ {\tt author1@ismir.edu}
+    \thanks{Acknowledgements withheld to support blind review.}
+}
   {Second author} {\bf Retain these fake authors in\\\bf submission to preserve the formatting}
   {Third author} {Affiliation$3$ \\ {\tt author3@ismir.edu}}
 
@@ -30,7 +32,7 @@
 %   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
 %   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
 %   {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
-
+  
 \begin{document}
 %
 \maketitle
@@ -61,29 +63,19 @@
 %
 \section{Introduction}\label{sec:introduction}
 
-\Bas{Will we use US or UK English?} \Ashley{UK, unless there are
-  strong objections. American though I may be, I've always preferred
-  UK spelling, and so excepting journals and conferences taking place
-  in the US, I always use UK}.
-
-\Bas{Introduce the acronym ACE somewhere in the introduction}
-
-\Bas{Somewhere at the end of this section I would appreciate a paragraph that summarises the main contribution of this paper.}
-
-\subsection{History of ACE Evaluation}
-
-Automatic chord recognition has a long tradition within the Music Information
-Retrieval \acro{(MIR)} community and (automatically extracted) chords are generally
-recognised as a useful harmonic representation in academia as well as in
-industry. For instance, in an academic context it has been shown that chords are
+Automatic chord estimation \acro{(ACE)} has a long tradition within
+the Music Information Retrieval \acro{(MIR)} community and
+(automatically extracted) chords are generally recognised as a useful
+harmonic representation in academia as well as in industry. For
+instance, in an academic context it has been shown that chords are
 interesting for addressing musicological
-hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as a
-mid-level feature to aid in retrieval tasks like cover-song
-finding~\cite{haas2011,khadkevich2013}. In an industry setting, music start-ups
-like Riffstation\footnote{\url{http://www.riffstation.com/}} and 
-Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} use \acro{ACE} in 
-their music teaching tools, and at time of writing Chordify attracts more
-than 2 million unique visitors every month. 
+hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as
+a mid-level feature to aid in retrieval tasks like cover-song
+finding~\cite{haas2011,khadkevich2013}. In an industry setting, music
+start-ups like Riffstation\footnote{\url{http://www.riffstation.com/}}
+and Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} use
+\acro{ACE} in their music teaching tools, and at time of writing
+Chordify attracts more than 2 million unique visitors every month.
 
 % 2008: 13 teams, 15 algorithms
 % 2009: 10 teams, 18 algorithms
@@ -134,7 +126,54 @@ these revised evaluation procedures, including the chord sequence segmentation
 evaluation suggested by Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have
 been adopted in the context of the \acro{MIREX} \acro{ACE} task.
 
+\subsection{Objectives}
+
+Limitations of Friedman test. Logistic regression as alternative. GEEs
+to control for random effects.
+
+\Bas{Somewhere at the end of this section I would appreciate a paragraph that summarises the main contribution of this paper.}
+
+\section{Current Evaluation Battery for ACE}
+
+Isophonics and two Billboard sets. Limit ourselves to Billboard
+2013. Sampling procedure and sample size.
+
+Research design in general: i.e., all algorithms on all
+songs. Measures and covariates: WCSR and segmentation; different vocabularies.
+
 \section{Logistic Regression with GEEs}
+
+\section{Results}
+
+\subsection{Effect of vocabulary}
+
+\subsection{Tukey tests}
+
+Vocabulary or vocabularies and segmentation.
+
+\subsection{Correlation matrices}
+
+\subsection{Outliers}
+
+\section{Discussion}
+
+\subsection{Utility of new vocabularies}
+
+\subsection{Comparison with Friedman test}
+
+Comparative figure.
+
+\subsection{Correlation matrices}
+
+Include MDS figure(s).
+
+\subsection{Outliers}
+
+\subsection{Interpretation and generalisability}
+
+\subsection{Comparison with Pauwels \& Peeters}
+
+\section{Implications for Future Work}
 
 \bibliography{burgoyne2014comparative}
 
