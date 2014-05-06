@@ -5,10 +5,11 @@
 \usepackage[british]{babel}
 \usepackage{csquotes}
 \usepackage{url}
+\usepackage{xcolor}
 
 % Bas: this packages won't compile on my machine
 %\usepackage[osf]{newtxtext}
-\usepackage{newtxmath}
+%\usepackage{newtxmath}
 % The TeX-Live newtx package is out of date, so correct math figures.
 \newcommand*{\mathdefault}{ntxrx}
 \DeclareSymbolFont{operators}{\encodingdefault}{\mathdefault}{m}{n}
@@ -93,9 +94,10 @@ interesting for addressing musicological
 hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as a
 mid-level feature to aid in retrieval tasks like cover-song
 finding~\cite{haas2011,khadkevich2013}. In an industry setting, music start-ups
-like Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} apply ACE to
-various on-line music sources, and at time of writing Chordify is attracts for more
-than 2 million unique visitors every month. \Johan{http://www.riffstation.com, an ACE supported guitar practice app from Mikel Gainza and others from Dublin Institute of Technology can be used as another industry example}
+like Riffstation\footnote{\url{http://www.riffstation.com/}} and 
+Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} use ACE in 
+their music teaching tools, and at time of writing Chordify attracts more
+than 2 million unique visitors every month. 
 
 % 2008: 13 teams, 15 algorithms
 % 2009: 10 teams, 18 algorithms
@@ -106,11 +108,15 @@ than 2 million unique visitors every month. \Johan{http://www.riffstation.com, a
 
 In order to compare different algorithmic approaches in an impartial setting, the MIREX audio chord
 estimation task has been established as a yearly event. Since
-its inception in 2008, each year between 11 and 18 algorithms have been submitted by a number of teams ranging from 6 to 13. Despite the fact that ACE algorithms are already used outside of academic environments, and even though the number of MIREX participants has decreased
-slightly the last three years, the problem of automatic chord transcription \Johan{wouldn't it be clearer if we stuck to a single designation of the task: estimation/extraction/transcription, pick one} is
+its inception in 2008, each year between 11 and 18 algorithms have been submitted 
+by a number of teams ranging from 6 to 13. Despite the fact 
+that ACE algorithms are used outside of academic environments, 
+and even though the number of MIREX participants has decreased
+slightly the last three years, the problem of automatic chord estimation is
 nowhere near solved. On fresh validation data, the best-performing algorithms in
 2013 barely reached a correct estimation in 75 percent of the time when considering only 24 major
-and minor chords. This number quickly drops off to 60~\% or less when the evaluation is extended to just a small subset of seventh chords.
+and minor chords. This number quickly drops to maximally 60 percent when the 
+evaluation is extended to a small subset of seventh chords.
 
 Although MIREX is a terrific platform for evaluating the performance of ACE
 algorithms, already in 2010 it was recognised that the evaluation of the
@@ -125,14 +131,22 @@ Agreement'\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreemen
 it was proposed that future evaluations should include more diverse chord
 vocabularies, like seventh chords, inversions, etc., as the vocabulary of twelve
 major and minor chords was considered a rather coarse representation of tonal
-harmony. Furthermore, the necessity for an additional measure of segmentation of the generated chord sequences was agreed on.
+harmony. Furthermore, the necessity for an additional measure of segmentation 
+of the generated chord sequences was agreed upon.
 
-At approximately the same time, Christopher Harte proposed a formalisation of measures that implemented the aspirations
-indicated in the Utrecht agreement~\cite{harte2010}. \Bas{Maybe we should
-explain Harte's work in more detail here.} Recently, Pauwels and
-Peeters~\cite{Pauwels-Peeters-2013} reformulated and extended Harte's work with the precise aim to handle differences in chord vocabulary between annotated ground truth and algorithmic output on one hand, and in between different algorithms on the other hand. They also performed a rigorous re-evaluation of all
-MIREX ACE submissions in 2010--2012. As of MIREX
-2013\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}, these revised evaluation procedures, including the chord sequence segmentation evaluation suggested by Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have been adopted in the context of the MIREX ACE task.
+At approximately the same time, Christopher Harte proposed a formalisation of
+measures that implemented the aspirations indicated in the Utrecht
+agreement~\cite{harte2010}. \Bas{Maybe we should explain Harte's work in more
+detail here.} Recently, Pauwels and Peeters~\cite{Pauwels-Peeters-2013}
+reformulated and extended Harte's work with the precise aim to handle
+differences in chord vocabulary between annotated ground truth and algorithmic
+output on one hand, and in between different algorithms on the other hand. They
+also performed a rigorous re-evaluation of all MIREX ACE submissions in
+2010--2012. As of MIREX
+2013\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}},
+these revised evaluation procedures, including the chord sequence segmentation
+evaluation suggested by Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have
+been adopted in the context of the MIREX ACE task.
 
 
 \section{Logistic Regression with GEEs}
