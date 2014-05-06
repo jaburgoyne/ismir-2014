@@ -1,27 +1,11 @@
 \documentclass{article}
-\usepackage{ismir2014,amsmath,cite}
+\usepackage{ismir2014-jab,amsmath,cite}
 
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
 \usepackage{csquotes}
 \usepackage{url}
 \usepackage{xcolor}
-
-% Bas: this packages won't compile on my machine
-%\usepackage[osf]{newtxtext}
-%\usepackage{newtxmath}
-% The TeX-Live newtx package is out of date, so correct math figures.
-\newcommand*{\mathdefault}{ntxrx}
-\DeclareSymbolFont{operators}{\encodingdefault}{\mathdefault}{m}{n}
-\SetSymbolFont{operators}{bold}{\encodingdefault}{\mathdefault}{b}{n}
-\DeclareMathAlphabet{\mathit}{\encodingdefault}{\mathdefault}{m}{it}
-\DeclareMathAlphabet{\mathbf}{\encodingdefault}{\mathdefault}{b}{n}
-\SetMathAlphabet{\mathit}{bold}{\encodingdefault}{\mathdefault}{b}{it}
-\usepackage[tracking,letterspace=50,babel]{microtype}
-\newcommand*{\acro}[1]{\textsc{\MakeLowercase{#1}}}
-\usepackage{titlesec}
-\titleformat{\section}{\fontfamily{ntxrx}\bfseries\selectfont\centering\uppercase}{\thesection.}{0.6em}{}
-\titleformat{\subsection}{\fontfamily{ntxrx}\bfseries\selectfont\raggedright}{\thesubsection}{0.6em}{}
 
 \usepackage{graphicx}
 
@@ -31,16 +15,15 @@
 \newcommand{\Ashley}[1]{\wrap{Ashley}{red}{#1}}
 \newcommand{\Johan}[1]{\wrap{Johan}{orange}{#1}}
 
-
 \title{%
   On comparative statistics for labelling tasks\\%
   What can we learn from MIREX ACE $\mathbf{2013}$?%
 }
 
 \threeauthors
-  {First author} {Affiliation1 \\ {\tt author1@ismir.edu}}
+  {First author} {Affiliation$1$ \\ {\tt author1@ismir.edu}}
   {Second author} {\bf Retain these fake authors in\\\bf submission to preserve the formatting}
-  {Third author} {Affiliation3 \\ {\tt author3@ismir.edu}}
+  {Third author} {Affiliation$3$ \\ {\tt author3@ismir.edu}}
 
 % Post-review
 % \threeauthors
@@ -69,7 +52,7 @@
   requires moving beyond the Friedman tests that have most often been
   used to compare algorithms to a richer underlying model. We propose
   a logistic-regression approach for generating comparative statistics
-  for \acro{MIREX ACE}, supported with generalised estimating
+  for \acro{MIREX} \acro{ACE}, supported with generalised estimating
   equations \acro{(GEEs)} to correct for repeated measures. We use the
   \acro{MIREX} 2013 \acro{ACE} results as a case study to illustrate
   our proposed method, including some of interesting aspects of the
@@ -78,7 +61,10 @@
 %
 \section{Introduction}\label{sec:introduction}
 
-\Bas{Will we use US or UK English?}
+\Bas{Will we use US or UK English?} \Ashley{UK, unless there are
+  strong objections. American though I may be, I've always preferred
+  UK spelling, and so excepting journals and conferences taking place
+  in the US, I always use UK}.
 
 \Bas{Introduce the acronym ACE somewhere in the introduction}
 
@@ -87,7 +73,7 @@
 \subsection{History of ACE Evaluation}
 
 Automatic chord recognition has a long tradition within the Music Information
-Retrieval (MIR) community and (automatically extracted) chords are generally
+Retrieval \acro{(MIR)} community and (automatically extracted) chords are generally
 recognised as a useful harmonic representation in academia as well as in
 industry. For instance, in an academic context it has been shown that chords are
 interesting for addressing musicological
@@ -95,7 +81,7 @@ hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as a
 mid-level feature to aid in retrieval tasks like cover-song
 finding~\cite{haas2011,khadkevich2013}. In an industry setting, music start-ups
 like Riffstation\footnote{\url{http://www.riffstation.com/}} and 
-Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} use ACE in 
+Chordify\footnote{\url{http://chordify.net}}~\cite{haas2012} use \acro{ACE} in 
 their music teaching tools, and at time of writing Chordify attracts more
 than 2 million unique visitors every month. 
 
@@ -106,26 +92,26 @@ than 2 million unique visitors every month.
 % 2012:  6 teams, 11 algorithms
 % 2013:  7 teams, 12 algorithms
 
-In order to compare different algorithmic approaches in an impartial setting, the MIREX audio chord
+In order to compare different algorithmic approaches in an impartial setting, the \acro{MIREX} audio chord
 estimation task has been established as a yearly event. Since
 its inception in 2008, each year between 11 and 18 algorithms have been submitted 
 by a number of teams ranging from 6 to 13. Despite the fact 
-that ACE algorithms are used outside of academic environments, 
-and even though the number of MIREX participants has decreased
+that \acro{ACE} algorithms are used outside of academic environments, 
+and even though the number of \acro{MIREX} participants has decreased
 slightly the last three years, the problem of automatic chord estimation is
 nowhere near solved. On fresh validation data, the best-performing algorithms in
 2013 barely reached a correct estimation in 75 percent of the time when considering only 24 major
 and minor chords. This number quickly drops to maximally 60 percent when the 
 evaluation is extended to a small subset of seventh chords.
 
-Although MIREX is a terrific platform for evaluating the performance of ACE
+Although \acro{MIREX} is a terrific platform for evaluating the performance of \acro{ACE}
 algorithms, already in 2010 it was recognised that the evaluation of the
 algorithms could be improved. At that time the quality of automatically
 extracted chord sequences was evaluated by calculating the Chord Sequence Recall
-(CSR) that reflected the proportion of correctly labelled chords and a Weighted
-Chord Sequence Recall (WCSR) that weighted the grand average by the length of a
-song. using a vocabulary of 12 major and minor chords. At ISMIR 2010, a group of
-ten researchers met to discuss their dissatisfaction with the ACE evaluation
+\acro{(CSR)} that reflected the proportion of correctly labelled chords and a Weighted
+Chord Sequence Recall \acro{(WCSR)} that weighted the grand average by the length of a
+song. using a vocabulary of 12 major and minor chords. At \acro{ISMIR} 2010, a group of
+ten researchers met to discuss their dissatisfaction with the \acro{ACE} evaluation
 measures. In the resulting `Utrecht
 Agreement'\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
 it was proposed that future evaluations should include more diverse chord
@@ -141,17 +127,15 @@ detail here.} Recently, Pauwels and Peeters~\cite{Pauwels-Peeters-2013}
 reformulated and extended Harte's work with the precise aim to handle
 differences in chord vocabulary between annotated ground truth and algorithmic
 output on one hand, and in between different algorithms on the other hand. They
-also performed a rigorous re-evaluation of all MIREX ACE submissions in
-2010--2012. As of MIREX
+also performed a rigorous re-evaluation of all \acro{MIREX} \acro{ACE} submissions in
+2010--2012. As of \acro{MIREX}
 2013\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}},
 these revised evaluation procedures, including the chord sequence segmentation
 evaluation suggested by Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have
-been adopted in the context of the MIREX ACE task.
-
+been adopted in the context of the \acro{MIREX} \acro{ACE} task.
 
 \section{Logistic Regression with GEEs}
 
-%\bibliographystyle{ismir2014}
 \bibliography{burgoyne2014comparative}
 
 \end{document}

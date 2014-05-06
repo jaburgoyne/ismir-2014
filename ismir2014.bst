@@ -1,5 +1,5 @@
 %%
-%% This is file `ismir2013.bst',
+%% This is file `ismir2014.bst',
 %% generated with the docstrip utility.
 %%
 %% The original source files were:

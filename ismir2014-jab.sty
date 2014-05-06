@@ -22,9 +22,29 @@
 \newcommand{\figref}[1]{\mbox{Figure~\ref{#1}}}
 \newcommand{\eqnref}[1]{\mbox{Eqn. (\ref{#1})}}
 
+% JAB: Free Times fonts have no small caps.
 \renewcommand{\sfdefault}{phv}
-\renewcommand{\rmdefault}{ptm}
+% \renewcommand{\rmdefault}{ptm}
 \renewcommand{\ttdefault}{pcr}
+\RequirePackage{mathptmx}
+\IfFileExists{TimesLTStd.sty}
+{
+  \RequirePackage{TimesLTStd}
+  \newcommand*{\acro}[1]{\textsc{\MakeLowercase{##1}}}
+}{
+  \newcommand*{\acro}[1]{\relax ##1}
+}
+\IfFileExists{newtxmath.sty}
+{
+  \RequirePackage{newtxmath}
+  \newcommand*{\mathdefault}{ntxrx}
+  \DeclareSymbolFont{operators}{\encodingdefault}{\mathdefault}{m}{n}
+  \SetSymbolFont{operators}{bold}{\encodingdefault}{\mathdefault}{b}{n}
+  \DeclareMathAlphabet{\mathit}{\encodingdefault}{\mathdefault}{m}{it}
+  \DeclareMathAlphabet{\mathbf}{\encodingdefault}{\mathdefault}{b}{n}
+  \SetMathAlphabet{\mathit}{bold}{\encodingdefault}{\mathdefault}{b}{it}
+}{}
+\RequirePackage[tracking,letterspace=80,babel]{microtype}
 
 \setlength{\paperheight}{297mm}
 \setlength{\paperwidth}{210mm}
@@ -252,7 +272,20 @@ and the full citation on the first page.
   \@xsect{\@tempskipa}
 }
 
-\bibliographystyle{plain}
+% JAB: OsFs look wrong in headings.
+\IfFileExists{TimesLTStd.sty}{
+  \RequirePackage{titlesec}
+  \titleformat{\section}%
+  {\fontfamily{TimesLTStd-TLF}\bfseries\selectfont\centering\uppercase}%
+  {\thesection.}{0.6em}{}
+  \titleformat{\subsection}%
+  {\fontfamily{TimesLTStd-TLF}\bfseries\selectfont\raggedright}%
+  {\thesubsection}{0.6em}{}
+}{}
+
+% JAB: plain.bst is inconsistent with the template.
+% \bibliographystyle{plain}
+\bibliographystyle{ismir2014}
 
 \def\thebibliography#1{
   \section{References}\list
