@@ -34,6 +34,29 @@
 %   {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
   
 \begin{document}
+<<global-opts, cache=FALSE, include=FALSE>>=
+library(knitr)  
+library(ggplot2)   # figures
+library(car)       # for contr.Sum()
+library(geepack)   # geeglm() for GEEs
+library(aod)       # vcov.geeglm(): needed for Tukey tests
+library(multcomp)  # glht(), cld(), and mcp() for Tukey tests
+opts_chunk$set(fig.align="center", dev="tikz", cache=TRUE, echo=FALSE)
+
+DATA.SETS <- c("MirexChord2009", 
+               "BillboardTest2012", "BillboardTest2013")
+## Algorithms in order of SeventhsBass performance.
+ALGOS <- c("KO2", "NMSD2", "CB4", "NMSD1", "CB3", "KO1", 
+           "PP4", "PP3", "CF2", "NG1", "NG2", "SB8")
+VOCABS <- c("Root", 
+            "MajMin", "MajMinBass", 
+            "Sevenths", "SeventhsBass")
+ANALYSES <- c(VOCABS, 
+              "Segmentation")
+DURATIONS <- c(sapply(tolower(VOCABS), 
+                      function (x) paste0("Dur", x)),
+               list(Segmentation = "DurRoot"))
+@ 
 %
 \maketitle
 %
@@ -134,6 +157,100 @@ to control for random effects.
 \Bas{Somewhere at the end of this section I would appreciate a paragraph that summarises the main contribution of this paper.}
 
 \section{Current Evaluation Battery for ACE}
+
+<<read-results>>=
+ReadResults <- function (analysis) {
+  #' MIREX results for a particular chord vocabulary or segmentation
+  #' 
+  #' Assumes that the current directory is that of a particular database in
+  #' Johan's distribution format.
+  #'
+  #' @param analysis chord vocabulary or segmentation to load
+  #'
+  is.segmentation <- analysis == "Segmentation"
+  col.names <- c()
+  col.classes <- c()
+  if (is.segmentation) {
+    setwd("resultsSegmentation")
+    col.names <- c("song", "", "under.segmentation", "over.segmentation")
+    col.classes <- c("factor", "NULL", "numeric", "numeric")
+  } else {
+    setwd(paste0("resultsMirex", analysis))
+    col.names <- c("song", 
+                   "performance", 
+                   "duration",
+                   rep("", 6))
+    col.classes <- c("factor", "numeric", "numeric", rep("NULL", 6))
+  }
+  results <- data.frame()
+  for (algo in ALGOS) {
+    algo.results <- read.table(paste0(algo, ".csv"),
+                               skip = 2,
+                               header = FALSE,
+                               sep = ",",
+                               dec = ".",
+                               col.names = col.names, 
+                               colClasses = col.classes)
+    if (is.segmentation) {
+      ## Replace over- and under-segmentation with the 
+      ## harmonic mean of their arithmetic inverses. 
+      algo.results$performance <-
+        1 / (0.5 * (1/(1-algo.results$under.segmentation) + 
+                    1/(1-algo.results$over.segmentation)))
+      algo.results$over.segmentation <- c()
+      algo.results$under.segmentation <- c()
+    } else {
+      ## Rescale RCO results back to [0, 1].
+      algo.results$performance <- algo.results$performance/100
+    }
+    results <- rbind(results, 
+                     cbind(algorithm = rep(algo, dim(algo.results)[1]),
+                           algo.results))
+  }
+  setwd("..")
+  if (is.segmentation) results$duration <- ReadResults("Root")$duration
+  return(results)
+}
+
+ReadAllResults <- function (data.set) {
+  #' Complete battery of MIREX results
+  #' 
+  #' Assumes that the current directory contains directories of results
+  #' for each database.
+  #' 
+  #' @param data.set the data set for which to load evaluations
+  #'
+  setwd(data.set)
+  results <-
+    within(
+      Reduce(rbind,
+             lapply(ANALYSES, 
+                    function (analysis) {
+                      result <- ReadResults(analysis)
+                      result$analysis <- rep(analysis, dim(result)[1])
+                      return(result)
+                    }),
+             data.frame()),
+      {
+        analysis <- factor(analysis, levels=ANALYSES)
+        vocabulary <- analysis
+        levels(vocabulary) <- c("Root", "MajMin", "MajMin", "Sevenths", "Sevenths", NA)
+        bass <- analysis == "MajMinBass" | analysis == "SeventhsBass"
+        bass[analysis == "Segmentation"] <- NA
+        ## Order the algorithm factor for easier comparisons.
+        algorithm <- factor(algorithm, levels=ALGOS)
+        ## Set the contrasts such that they represent differences 
+        ## from the grand average.
+        contrasts(song) <- contr.Sum(levels(song))
+        contrasts(algorithm) <- contr.Sum(levels(algorithm))
+      })
+  setwd("..")
+  return(results[order(results$song),]) # group sorting for geeglm()
+}
+
+billboard.2013 <- ReadAllResults("BillboardTest2013")
+@ 
+
 
 Isophonics and two Billboard sets. Limit ourselves to Billboard
 2013. Sampling procedure and sample size.
