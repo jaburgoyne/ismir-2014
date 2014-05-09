@@ -171,7 +171,7 @@ been adopted in the context of the \acro{MIREX} \acro{ACE} task.
 \subsection{Objectives}
 
 Limitations of Friedman test. Logistic regression as alternative. GEEs
-to control for random effects.
+to control for random effects. Magnifies trivial differences.
 
 Cite De Haas and Kutner for Friedman test.
 
@@ -382,39 +382,33 @@ Vocabulary or vocabularies and segmentation.
 \subsection{Effect of vocabulary}
 
 <<vocabulary, dependson="read-results">>=
-vocab.fit. <-
+friedman.vocab.anova <-
   with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
-       geeglm(performance ~ algorithm * analysis, 
-                family = binomial(link="logit"),
-                corstr = "exchangeable",
-                weights = duration,
-                id = song)
-       )
-vocab.fit.2 <-
+       Anova(aov(performance.rank ~ song + algorithm * vocabulary * bass)))
+logistic.vocab.anova <-
   with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
-         geeglm(performance ~ algorithm * (vocabulary + bass), 
-                family = binomial(link="logit"),
-                corstr = "exchangeable",
-                weights = duration,
-                id = song)
-       )
-vocab.fit.3 <-
-  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
-         geeglm(performance ~ algorithm + vocabulary + bass, 
-                family = binomial(link="logit"),
-                corstr = "exchangeable",
-                weights = duration,
-                id = song)
-    )
-vocab.fit.4 <-
-  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
-         geeglm(performance ~ algorithm,
-                family = binomial(link="logit"),
-                corstr = "exchangeable",
-                weights = duration,
-                id = song)
-    )
+       anova(geeglm(performance ~ algorithm * (vocabulary + bass), 
+                    family = binomial(link="logit"),
+                    corstr = "exchangeable",
+                    weights = duration,
+                    id = song),
+             geeglm(performance ~ algorithm * analysis, 
+                    family = binomial(link="logit"),
+                    corstr = "exchangeable",
+                    weights = duration,
+                    id = song)))
 @ 
+
+Under Friedman's \acro{ANOVA}, there is a significant Algorithm
+$\times$ Complexity interaction, $F($\Sexpr{friedman.vocab.anova[5,2]},
+\Sexpr{sum(friedman.vocab.anova[7:9,2])}$) =$
+\Sexpr{round(friedman.vocab.anova[5,3], 2)},
+\Sexpr{FormatP(friedman.vocab.anova[5,4])}, but inversions are
+significant neither as a main effect nor as part of any
+interaction. The logistic regression model, in contrast, identifies a
+significant three-way Algorithm $\times$ Complexity $\times$
+Inversions interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$)
+=$ \Sexpr{round(logistic.vocab.anova[1,2], 2)}, \Sexpr{FormatP(logistic.vocab.anova[1,3])}.
 
 \subsection{Correlation matrices}
 
