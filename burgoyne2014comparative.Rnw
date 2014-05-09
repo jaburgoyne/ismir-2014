@@ -48,7 +48,6 @@ library(car)       # for contr.Sum()
 library(geepack)   # geeglm() for GEEs
 library(aod)       # vcov.geeglm(): needed for Tukey tests
 library(multcomp)  # glht(), cld(), and mcp() for Tukey tests
-library(ade4)      # mtree(), for plotting correlations
 
 opts_chunk$set(fig.align="center", cache=TRUE, echo=FALSE, warning=FALSE)
 
@@ -307,8 +306,7 @@ billboard.2013 <- ReadAllResults("BillboardTest2013")
     major-minor vocabulary with sevenths; V: major-minor vocabulary
     with sevenths and inversions; VI: mean segmentation score; VII:
     under-segmentation; VIII: over-segmentation. Starred algorithms
-    incorporated local training on the \acro{MIREX} servers. Adapted
-    from \protect\url{http://music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation_Results_Billboard_2013}.}
+    incorporated local training on the \acro{MIREX} servers.}
   \label{tab:mirex-results}
 \end{table}
 
