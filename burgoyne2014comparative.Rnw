@@ -7,6 +7,13 @@
 \usepackage{url}
 \usepackage{xcolor}
 
+\usepackage{booktabs}
+\usepackage{dcolumn}
+\newcommand{\colhead}[1]{\multicolumn{1}{c}{#1}}
+\usepackage[labelsep=period]{caption}
+\usepackage{subcaption} 
+% knitr requires a command for subfig compatibility
+\newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
 \usepackage{graphicx}
 
 % for creating comments
@@ -41,7 +48,8 @@ library(car)       # for contr.Sum()
 library(geepack)   # geeglm() for GEEs
 library(aod)       # vcov.geeglm(): needed for Tukey tests
 library(multcomp)  # glht(), cld(), and mcp() for Tukey tests
-opts_chunk$set(fig.align="center", dev="tikz", cache=TRUE, echo=FALSE)
+
+opts_chunk$set(fig.align="center", cache=TRUE, echo=FALSE, warning=FALSE)
 
 DATA.SETS <- c("MirexChord2009", 
                "BillboardTest2012", "BillboardTest2013")
@@ -56,6 +64,17 @@ ANALYSES <- c(VOCABS,
 DURATIONS <- c(sapply(tolower(VOCABS), 
                       function (x) paste0("Dur", x)),
                list(Segmentation = "DurRoot"))
+
+FormatP <- function(p) {
+  #' Format p-values according to APA specifications: 3 decimal places
+  #' unless less than .001.
+  #'
+  ifelse(p < 0.001, "$p <$ .001", paste0("$p =$ .", formatC(1000 * p,
+                                                            format = "f",
+                                                            digits = 0,
+                                                            width  = 3,
+                                                            flag   = "0")))
+}
 @ 
 %
 \maketitle
@@ -154,6 +173,8 @@ been adopted in the context of the \acro{MIREX} \acro{ACE} task.
 Limitations of Friedman test. Logistic regression as alternative. GEEs
 to control for random effects.
 
+Cite De Haas and Kutner for Friedman test.
+
 \Bas{Somewhere at the end of this section I would appreciate a paragraph that summarises the main contribution of this paper.}
 
 \section{Current Evaluation Battery for ACE}
@@ -209,6 +230,12 @@ ReadResults <- function (analysis) {
   }
   setwd("..")
   if (is.segmentation) results$duration <- ReadResults("Root")$duration
+  results <-
+    within(results, {
+      performance.rank <- rep(NA, length(performance))
+      for (group in levels(song))
+        performance.rank[song==group] <- rank(performance[song==group])
+    })
   return(results)
 }
 
@@ -251,6 +278,92 @@ ReadAllResults <- function (data.set) {
 billboard.2013 <- ReadAllResults("BillboardTest2013")
 @ 
 
+\begin{table}
+  \small
+  \centering
+ \begin{tabular}{lD{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{}{2.0}}
+    \toprule
+    \colhead{Algo.} & \colhead{I} & \colhead{II} & \colhead{III} & \colhead{IV} &
+    \colhead{V} & \colhead{VI} & \colhead{VII} & \colhead{VIII} \\
+    \midrule
+    \acro{KO2}$^\ast$   & 76 & 74 & 72 & 60 & 58 & 84 & 79 & 89 \\
+    \acro{NMSD2} & 75 & 71 & 69 & 59 & 57 & 82 & 79 & 86 \\
+    \acro{CB4}$^\ast$   & 76 & 72 & 70 & 59 & 57 & 85 & 80 & 90 \\
+    \acro{NMSD1} & 74 & 71 & 69 & 58 & 56 & 83 & 79 & 86 \\
+    \acro{CB3}   & 76 & 72 & 70 & 58 & 56 & 85 & 81 & 89 \\
+    \acro{KO1}   & 75 & 71 & 69 & 54 & 52 & 83 & 80 & 88 \\
+    \acro{PP4}   & 69 & 66 & 64 & 51 & 49 & 83 & 78 & 87 \\
+    \acro{PP3}   & 70 & 68 & 65 & 50 & 48 & 83 & 82 & 84 \\
+    \acro{CF2}   & 71 & 67 & 65 & 49 & 47 & 83 & 83 & 83 \\
+    \acro{NG1}   & 71 & 67 & 65 & 49 & 46 & 82 & 79 & 86 \\
+    \acro{NG2}   & 67 & 63 & 61 & 44 & 43 & 82 & 81 & 83 \\
+    \acro{SB8}   &  9 &  7 &  6 &  5 &  5 & 51 & 92 & 35 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Results for \acro{MIREX} \acro{ACE} 2013 on the
+    \emph{Billboard} 2013 test set. I: root only; II: major-minor
+    vocabulary; III: major-minor vocabulary with inversions; IV:
+    major-minor vocabulary with sevenths; V: major-minor vocabulary
+    with sevenths and inversions; VI: mean segmentation score; VII:
+    under-segmentation; VIII: over-segmentation. Starred algorithms
+    incorporated local training on the \acro{MIREX} servers. Adapted
+    from \protect\url{http://music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation_Results_Billboard_2013}.}
+  \label{tab:mirex-results}
+\end{table}
+
+<<cld-plots, dependson="read-results", fig.show="hold", fig.width=12, fig.height=6, include=FALSE>>=
+friedman.summary <-
+  with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
+       summary(glht(aov(performance.rank ~ song + algorithm),
+                    mcp(algorithm = "Tukey")),
+               test = adjusted("fdr")))
+logistic.summary <-
+  with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
+       summary(glht(geeglm(formula = performance ~ algorithm,
+                           family  = binomial(link="logit"),
+                           corstr  = "exchangeable",
+                           weights = duration,
+                           id      = song),
+                    mcp(algorithm = "Tukey")),
+               test = adjusted("fdr")))
+## Compact letter displays require an extra top margin.
+par(mar = par("mar") + c(0, 0, 5, 0))
+## Trick plot.cld into using the response for the Friedman ANOVA.
+friedman.cld <- cld(friedman.summary, level=.005)
+friedman.cld$covar <- FALSE
+plot(friedman.cld,
+     xlab = "Algorithm",
+     ylab = "Rank per Song (1 low; 12 high)")
+plot(cld(logistic.summary, level=.005),
+     xlab = "Algorithm",
+     ylab = "Weighted Chord-Symbol Recall")
+@ 
+
+\begin{figure*}
+  \centering
+  \subfloat[Friedman's \acro{ANOVA}\label{fig:cld-plots1}]{
+    \centering
+    \includegraphics[width=\linewidth]{figure/cld-plots1} 
+  }\\
+  \subfloat[Logistic Regression\label{fig:cld-plots2}]{
+    \centering
+    \includegraphics[width=\linewidth]{figure/cld-plots2} 
+  }
+  \caption{Boxplots and compact letter displays for the \acro{MIREX}
+    \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with
+    vocabulary V (seventh chords and inversions). Given the
+    statistical models, there are insufficient data to distinguish
+    among algorithms sharing a letter, correcting for multiple
+    comparisons to hold the false discovery rate at $\alpha <$
+    .005. $N =$ 161 songs per algorithm. Although Friedman's
+    \acro{ANOVA} detects slightly more significant pairwise
+    differences than the logistic regression model
+    (\Sexpr{sum(friedman.summary$test$pvalues < .005)} vs.\
+    \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it operates on
+    a different scale than \acro{CSR} and misorders algorithms
+    relative to the headline results.}
+  \label{fig:clr-plots}
+\end{figure*}
 
 Isophonics and two Billboard sets. Limit ourselves to Billboard
 2013. Sampling procedure and sample size.
@@ -262,11 +375,46 @@ songs. Measures and covariates: WCSR and segmentation; different vocabularies.
 
 \section{Results}
 
-\subsection{Effect of vocabulary}
-
 \subsection{Tukey tests}
 
 Vocabulary or vocabularies and segmentation.
+
+\subsection{Effect of vocabulary}
+
+<<vocabulary, dependson="read-results">>=
+vocab.fit. <-
+  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
+       geeglm(performance ~ algorithm * analysis, 
+                family = binomial(link="logit"),
+                corstr = "exchangeable",
+                weights = duration,
+                id = song)
+       )
+vocab.fit.2 <-
+  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
+         geeglm(performance ~ algorithm * (vocabulary + bass), 
+                family = binomial(link="logit"),
+                corstr = "exchangeable",
+                weights = duration,
+                id = song)
+       )
+vocab.fit.3 <-
+  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
+         geeglm(performance ~ algorithm + vocabulary + bass, 
+                family = binomial(link="logit"),
+                corstr = "exchangeable",
+                weights = duration,
+                id = song)
+    )
+vocab.fit.4 <-
+  with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
+         geeglm(performance ~ algorithm,
+                family = binomial(link="logit"),
+                corstr = "exchangeable",
+                weights = duration,
+                id = song)
+    )
+@ 
 
 \subsection{Correlation matrices}
 
