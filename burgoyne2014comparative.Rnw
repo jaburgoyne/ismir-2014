@@ -427,24 +427,27 @@ Inversions interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$)
   \label{tab:cor}
 \end{table*}
 
-<<correlations, dependson="read-results">>=
+<<correlations, dependson="read-results", fig.width=7, fig.height=4.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
 with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
-     {
-       ## It may not be necessary to change the contrast type, but it is safer.
+     { ## It may not be necessary to change the contrast type, but it is safer.
        .contrasts. <- contr.Sum(levels(algorithm))
        contrasts(algorithm) <- .contrasts.
        .vcov. <- vcov(geeglm(formula = performance ~ algorithm,
-                             family  = binomial(link="logit"),
-                             corstr  = "exchangeable",
-                             weights = duration,
-                             id      = song))
+                             family = binomial(link="logit"),
+                             corstr = "exchangeable",
+                             weights = duration, id = song))
        logistic.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
        logistic.cor <- cov2cor(logistic.vcov)
-       logistic.dist <- as.dist((1 - logistic.cor)/2)
+       logistic.dist <- as.dist((1 - logistic.cor)/2) 
+       ## Confirm that the Friedman variance-covariance matrix is degenerate.
        .vcov. <- vcov(glm(performance.rank ~ algorithm + song))
        friedman.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
        friedman.cor <- cov2cor(friedman.vcov)
        friedman.dist <- as.dist((1 - friedman.cor)/2)
+       par(mar=par("mar")-c(4,0,0,0))
+       plot(hclust(logistic.dist, method="complete"),
+            main="", sub="",
+            ylab="Pearson's Distance", xlab="")
      })
 @ 
 
