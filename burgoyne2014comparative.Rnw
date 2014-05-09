@@ -179,6 +179,10 @@ Cite De Haas and Kutner for Friedman test.
 
 \section{Current Evaluation Battery for ACE}
 
+With 12 algorithms, 5 vocabularies plus a segmentation measure, and
+161 songs, the complete evaluation data \emph{Billboard} 2013 test set
+includes 11\,592 observations.
+
 <<read-results>>=
 ReadResults <- function (analysis) {
   #' MIREX results for a particular chord vocabulary or segmentation
@@ -310,7 +314,7 @@ billboard.2013 <- ReadAllResults("BillboardTest2013")
   \label{tab:mirex-results}
 \end{table}
 
-<<cld-plots, dependson="read-results", fig.show="hold", fig.width=7, fig.height=5, fig.out="\\linewidth", fig.cap=paste0("Boxplots and compact letter displays for the \\acro{MIREX} \\acro{ACE} 2013 results on the \\emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons with the Benjamini--Hochberg procedure to hold the false discovery rate at $\\alpha =$ .005 \\cite{Benjamini-Hochberg-1995}. Although Friedman's \\acro{ANOVA} detects slightly more significant pairwise differences than the logistic regression model (", sum(friedman.summary$test$pvalues < .005), " vs.\ ", sum(logistic.summary$test$pvalues < .005), "), it operates on a different scale than \\acro{CSR} and misorders algorithms relative to the headline results."), fig.subcap=c("Friedman's \\acro{ANOVA}", "Logistic Regression")>>=
+<<cld-summaries, dependson="read-results">>=
 friedman.summary <-
   with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
        summary(glht(aov(performance.rank ~ song + algorithm),
@@ -325,6 +329,9 @@ logistic.summary <-
                            id      = song),
                     mcp(algorithm = "Tukey")),
                test = adjusted("fdr")))
+@ 
+
+<<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, fig.out="\\linewidth", fig.cap=paste0("Boxplots and compact letter displays for the \\acro{MIREX} \\acro{ACE} 2013 results on the \\emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons with the Benjamini--Hochberg procedure to hold the false discovery rate at $\\alpha =$ .005 \\cite{Benjamini-Hochberg-1995}. Although Friedman's \\acro{ANOVA} detects slightly more significant pairwise differences than the logistic regression model (", sum(friedman.summary$test$pvalues < .005), " vs.\ ", sum(logistic.summary$test$pvalues < .005), "), it operates on a different scale than \\acro{CSR} and misorders algorithms relative to the headline results."), fig.subcap=c("Friedman's \\acro{ANOVA}", "Logistic Regression")>>=
 ## Compact letter displays require an extra top margin.
 par(mar = par("mar") + c(0, 0, 5, 0))
 ## Trick plot.cld into using the response for the Friedman ANOVA.
@@ -451,6 +458,37 @@ with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
 
 \subsection{Outliers}
 
+<<outliers, dependson="read-results">>=
+## Chauvenet's criterion for this sample size.
+chauvenet <- qnorm(1/(2*dim(billboard.2013)[1]), lower.tail=FALSE)
+friedman.outliers <- with(billboard.2013, {
+  friedman.fit <- glm(performance.rank ~ song + algorithm * analysis)
+  billboard.2013[abs(resid(friedman.fit)) > chauvenet * sd(resid(friedman.fit)),]
+})
+logistic.outliers <- with(billboard.2013, {
+  logistic.fit <- geeglm(formula = performance ~ algorithm * analysis,
+                         family = binomial(link="logit"),
+                         corstr = "exchangeable",
+                         weights = duration, id = song)
+  billboard.2013[abs(resid(logistic.fit)) > chauvenet * sd(resid(friedman.fit)),]
+})
+@ 
+
+Chauvenet's criterion for outliers in a sample of this size is to lie
+more than \Sexpr{round(chauvenet, 2)} standard deviations from the
+mean. No data point meets this criterion under Friedman's
+\acro{ANOVA}. The most extreme residuals occur for algorithm
+\acro{SB8}, on songs that were so difficult for most algorithms that
+the essentially random approach of \acro{SB8}, due to its software
+bug, did better. Under the logistic regression model, Chauvenet's
+criterion identifies \Sexpr{dim(logistic.outliers)[1]} extreme data
+points. These are primarily for songs that are tuned quarter-tone off
+from standard tuning (A4 = 440\,Hz). The ground truth necessarily is
+\enquote{rounded off} to standard tuning in one direction or the
+other, but in cases where an otherwise high-performing algorithm
+happened to round off in the other direction, the performance is
+extremely and unexpectedly low.
+
 \section{Discussion}
 
 \subsection{Utility of new vocabularies}
@@ -464,6 +502,11 @@ Comparative figure.
 Include MDS figure(s).
 
 \subsection{Outliers}
+
+The most extreme residuals are all for songs where \acro{SB8} did
+unusually well.
+
+Tuning is a known problem.
 
 \subsection{Interpretation and generalisability}
 
