@@ -638,8 +638,8 @@ Zweieck \cite{mauch2010} and two versions of the McGill
 results of logistic regression on all combinations, and so we
 will focus on a single one of the data sets, the \emph{Billboard} 2013
 test set. In some cases, logistic regression allows us to speak to all
-measures (11\,592 observations), but in general, we will also
-restricted ourselves to discussing the newest and most challenging of
+measures (11\,592 observations), but in general, we will 
+restrict ourselves to discussing the newest and most challenging of
 the harmonic vocabularies for \acro{WCSR}: Vocabulary V, which
 includes major chords, minor chords, major sevenths, minor sevenths,
 dominant sevenths, and the complete set of inversions of all of the
@@ -658,6 +658,8 @@ above (1932 observations). We are interested in four key questions.
   unexpectedly bad performance, and is there anything to be learned
   from these observations?
 \end{enumerate}
+
+\BaS{Very Nice!}
 
 \subsection{Pairwise Comparisons}
 
@@ -769,7 +771,9 @@ after logistic regression on \acro{WCSR} for Vocabulary V. Friedman's
 the same. Significant correlations are marked, again using the
 Benjamini--Hochberg procedure to control the \acro{FDR} at $\alpha =$
 .005. Positive correlations do not necessarily imply that the
-algorithms perform similarity; rather it implies that they find the
+algorithms perform similarity;
+\Bas{similarly, I guess\ldots}
+rather it implies that they find the
 same songs relatively easy or difficult. Negative correlations imply
 that songs that one algorithm finds difficult are relatively easy for
 the other algorithm.
@@ -795,7 +799,9 @@ logistic.outliers <- with(billboard.2013, {
 To check for outliers, we considered all evaluations on the
 \emph{Billboard} 2013 test set. Chauvenet's criterion for outliers in
 a sample of this size is to lie more than \Sexpr{round(chauvenet, 2)}
-standard deviations from the mean. No data point met this criterion
+standard deviations from the mean. 
+\Bas{A reference would be nice here.}
+No data point met this criterion
 under Friedman's \acro{ANOVA}. The most extreme residuals occur for
 algorithm \acro{SB8}, on songs that were so difficult for most
 algorithms that the essentially random approach of \acro{SB8}, due to
