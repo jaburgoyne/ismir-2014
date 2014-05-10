@@ -238,6 +238,15 @@ transformation can obscure information inherent to the underlying
 measurement, magnifying trivial differences and neutralising
 significant inter-correlations.
 
+%% \Bas{There is another drawback of the Friedman test, it cannot naturally
+%% handle weighted evauation scores, such as the \arc{WCSR}. 
+%% In the particular case of chord labelling the experimenter would
+%% prefer the \acro{WCSR} over the \acro{CSR}~\cite{Pauwels-Peeters-2013},
+%% but he can only use the \acro{CSR} for statistical anlalysis using the
+%% Friedman test.}
+
+%% \Ashley{It turns out that you actually *can* do a weighted Friedman test, as it turns out. You just have to formulate as an (almost) normal two-way ANOVA with the variables in a particular order (and still with rank transformation, of course). I had no idea. Remind me the next time I see you and I'll show you.}
+
 There is no need to pay the costs of Friedman's \acro{ANOVA} for
 evaluating chord estimation, however. Fundamentally, \acro{WCSR} is a
 proportion, specifically the expected proportion of audio frames that
