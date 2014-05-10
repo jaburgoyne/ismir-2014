@@ -659,6 +659,9 @@ above (1932 observations). We are interested in four key questions.
   from these observations?
 \end{enumerate}
 
+% \Bas{Very Nice!}
+% \Ashley{Thanks!}
+
 \subsection{Pairwise Comparisons}
 
 The boxplots in Figure~\ref{fig:cld-plots} give a broader view of the
@@ -795,7 +798,9 @@ logistic.outliers <- with(billboard.2013, {
 To check for outliers, we considered all evaluations on the
 \emph{Billboard} 2013 test set. Chauvenet's criterion for outliers in
 a sample of this size is to lie more than \Sexpr{round(chauvenet, 2)}
-standard deviations from the mean. No data point met this criterion
+standard deviations from the mean. 
+\Bas{A reference would be nice here.}
+No data point met this criterion
 under Friedman's \acro{ANOVA}. The most extreme residuals occur for
 algorithm \acro{SB8}, on songs that were so difficult for most
 algorithms that the essentially random approach of \acro{SB8}, due to
