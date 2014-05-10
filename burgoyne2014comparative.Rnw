@@ -7,6 +7,12 @@
 \usepackage{url}
 \usepackage{xcolor}
 
+\usepackage{vector}
+\renewcommand*{\vec}[1]{\ensuremath{\boldsymbol{\bvec{#1}}}}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+\usepackage{xfrac}
+
 \usepackage{booktabs}
 \usepackage{dcolumn}
 \newcommand{\colhead}[1]{\multicolumn{1}{c}{#1}}
@@ -142,38 +148,41 @@ range of possible chords was restricted exclusively to the 24 major
 and minor chords; the performance figure drops to 60 percent when the
 evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-results}).
 
-\begin{table}
+\begin{table*}
   \small
   \centering
- \begin{tabular}{lD{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{.}{2.0}D{.}{}{2.0}}
+ \begin{tabular}{clcD{.}{}{2.0}ccD{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}D{.}{}{2.0}}
     \toprule
-    \colhead{Algo.} & \colhead{I} & \colhead{II} & \colhead{III} & \colhead{IV} &
+    \multicolumn{3}{c}{Algorithm} &
+    \colhead{\# Types} & \colhead{Inversions?} & \colhead{Training?} &
+    \colhead{I} & \colhead{II} & \colhead{III} & \colhead{IV} &
     \colhead{V} & \colhead{VI} & \colhead{VII} & \colhead{VIII} \\
     \midrule
-    \acro{KO2}$^\ast$   & 76 & 74 & 72 & 60 & 58 & 84 & 79 & 89 \\
-    \acro{NMSD2} & 75 & 71 & 69 & 59 & 57 & 82 & 79 & 86 \\
-    \acro{CB4}$^\ast$   & 76 & 72 & 70 & 59 & 57 & 85 & 80 & 90 \\
-    \acro{NMSD1} & 74 & 71 & 69 & 58 & 56 & 83 & 79 & 86 \\
-    \acro{CB3}   & 76 & 72 & 70 & 58 & 56 & 85 & 81 & 89 \\
-    \acro{KO1}   & 75 & 71 & 69 & 54 & 52 & 83 & 80 & 88 \\
-    \acro{PP4}   & 69 & 66 & 64 & 51 & 49 & 83 & 78 & 87 \\
-    \acro{PP3}   & 70 & 68 & 65 & 50 & 48 & 83 & 82 & 84 \\
-    \acro{CF2}   & 71 & 67 & 65 & 49 & 47 & 83 & 83 & 83 \\
-    \acro{NG1}   & 71 & 67 & 65 & 49 & 46 & 82 & 79 & 86 \\
-    \acro{NG2}   & 67 & 63 & 61 & 44 & 43 & 82 & 81 & 83 \\
-    \acro{SB8}   &  9 &  7 &  6 &  5 &  5 & 51 & 92 & 35 \\
+    & \acro{KO2}   & &  7 & & \textbullet & 76 & 74 & 72 & 60 & 58 & 84 & 79 & 89 \\
+    & \acro{NMSD2} & & 10 & &             & 75 & 71 & 69 & 59 & 57 & 82 & 79 & 86 \\
+    & \acro{CB4}   & & 13 & & \textbullet & 76 & 72 & 70 & 59 & 57 & 85 & 80 & 90 \\
+    & \acro{NMSD1} & & 10 & &             & 74 & 71 & 69 & 58 & 56 & 83 & 79 & 86 \\
+    & \acro{CB3}   & & 13 & &             & 76 & 72 & 70 & 58 & 56 & 85 & 81 & 89 \\
+    & \acro{KO1}   & &  7 & &             & 75 & 71 & 69 & 54 & 52 & 83 & 80 & 88 \\
+    & \acro{PP4}   & &  5 & &             & 69 & 66 & 64 & 51 & 49 & 83 & 78 & 87 \\
+    & \acro{PP3}   & &  2 & &             & 70 & 68 & 65 & 50 & 48 & 83 & 82 & 84 \\
+    & \acro{CF2}   & & 10 & \textbullet & & 71 & 67 & 65 & 49 & 47 & 83 & 83 & 83 \\
+    & \acro{NG1}   & &  2 & &             & 71 & 67 & 65 & 49 & 46 & 82 & 79 & 86 \\
+    & \acro{NG2}   & &  5 & &             & 67 & 63 & 61 & 44 & 43 & 82 & 81 & 83 \\
+    & \acro{SB8}   & &  2 & &             &  9 &  7 &  6 &  5 &  5 & 51 & 92 & 35 \\
     \bottomrule
   \end{tabular}
-  \caption{Results for \acro{MIREX} \acro{ACE} 2013 on the
-    \emph{Billboard} 2013 test set. I: root only; II: major-minor
+  \caption{Number of supported chord types, inversion support,
+    training support, and \acro{MIREX} results on the
+    \emph{Billboard} 2013 test set for all 2013 \acro{ACE}
+    submissions. I: root only; II: major-minor
     vocabulary; III: major-minor vocabulary with inversions; IV:
     major-minor vocabulary with sevenths; V: major-minor vocabulary
     with sevenths and inversions; VI: mean segmentation score; VII:
-    under-segmentation; VIII: over-segmentation. Starred algorithms
-    incorporated local training on the \acro{MIREX} servers. Adapted
-    from the \acro{MIREX} Wiki.}
+    under-segmentation; VIII: over-segmentation. Adapted from the
+    \acro{MIREX} Wiki.}
   \label{tab:mirex-results}
-\end{table}
+\end{table*}
 
 \acro{MIREX} is a terrific platform for evaluating the performance of
 \acro{ACE} algorithms, but by 2010 it was already being recognised
@@ -187,9 +196,8 @@ and minor chords. At \acro{ISMIR} 2010, a group of ten researchers met
 to discuss their dissatisfaction with the \acro{ACE} evaluation
 measures. In the resulting \enquote{Utrecht Agreement}, it was
 proposed that future evaluations should include more diverse chord
-vocabularies, such as seventh chords, inversions, etc., as the
-vocabulary of twelve major and minor chords was considered a rather
-coarse representation of tonal
+vocabularies, such as seventh chords and inversions, as the 24-chord
+vocabulary was considered a rather coarse representation of tonal
 harmony.\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
 Furthermore, the group agreed that it was important to include a
 measure of segmentation quality.
@@ -220,7 +228,7 @@ is equivalent to a standard two-way \acro{ANOVA} with the actual
 measurements (in our case \acro{WCSR} or the new segmentation measure)
 replaced by the rank of each treatment (in our case, each algorithm)
 on that measure within each block (in our case, for each song)
-\cite[pp.~900--01]{Kutner2005}. The rank transformation makes
+\cite{Kutner2005}. The rank transformation makes
 Friedman's \acro{ANOVA} an excellent \enquote{one size fits all}
 approach that can be applied with minimal regard to the underlying
 distribution of the data, but these benefits come with costs. Like any
@@ -230,25 +238,241 @@ transformation can obscure information inherent to the underlying
 measurement, magnifying trivial differences and neutralising
 significant inter-correlations.
 
-There is no true need to pay the costs of Friedman's \acro{ANOVA} for
+There is no need to pay the costs of Friedman's \acro{ANOVA} for
 evaluating chord estimation, however. Fundamentally, \acro{WCSR} is a
-probability, specifically the probability that an estimation algorithm
-will label an arbitrary frame of audio correctly, and as such, it fits
-naturally into a logistic regression (logit) model. Likewise, the new
-segmentation score, also constrained to fall between 0 and 100
-percent, is appropriate for logistic regression. The remainder of this
-paper describes how exactly logistic regression can be used for
-comparative evaluation of chord estimation algorithms and uses the
-\acro{MIREX} results from last year to illustrate four key benefits of
-this approach: easier interpretation, greater statistical power, an
-inter-correlation for identify relationships among submitted
-algorithms, and better detection of outliers.
+proportion, specifically the expected proportion of audio frames that
+an estimation algorithm will label correctly, and as such, it fits
+naturally into \emph{logistic regression} (i.e., a \emph{logit
+  model}). Likewise, the new segmentation score is constrained to fall
+between 0 and 100 percent, and thus it is also suitable for the same
+type of analysis. The remainder of this paper describes how logistic
+regression can be used to compare chord estimation algorithms, using
+\acro{MIREX} results from last year to illustrate four key benefits:
+easier interpretation, greater statistical power, an inter-correlation
+for identify relationships among submitted algorithms, and better
+detection of outliers.
 
 \section{Logistic Regression with GEEs}
 
-GEEs to control for random effects.
+Proportions cannot be distributed normally because they are supported
+exclusively on [0, 1], and thus they present challenges for
+traditional techniques of statistical analysis. Logit models are
+designed to handle these challenges without sacrificing the simplicity
+of the usual linear function relating parameters and covariates
+\cite[ch.~4]{Agresti2007}:
+\begin{equation}
+  \label{eq:logit1}
+  \pi(\vec{x}; \vec{\betaup}) = 
+  \frac{\mathrm{e}^{\vec{x}'\vec{\betaup}}}
+  {1 + \mathrm{e}^{\vec{x}'\vec{\betaup}}}
+  \ ,
+\end{equation}
+or equivalently
+\begin{equation}
+  \label{eq:logit2}
+  \log \frac{\pi(\vec{x}; \vec{\betaup})}{1-\pi(\vec{x}; \vec{\betaup})} = \vec{x}'\vec{\betaup}
+  \ ,
+\end{equation}
+where $\pi(\vec{x}; \vec{\betaup})$ represents the relative frequency
+of \enquote{success} given the values of covariates in $\vec{x}$ and
+parameters $\vec{\betaup}$. In the case of a basic model for
+\acro{MIREX} \acro{ACE}, $\vec{x}$ would identify the algorithm and
+$\pi(\vec{x}; \vec{\betaup})$ would be the relative frequency of
+correct chord labels for that algorithm (i.e., \acro{WCSR}). In the
+case of data like \acro{ACE} results, where there are proportions
+$p_i$ of correct recognitions over $n_i$ analysis frames rather than
+binary successes or failures, logistic regression assumes that each $p_i$
+represents the observed proportion of successes among $n_i$
+conditionally-independent binary observations, or more formally, that
+the $p_i$ are distributed binomially:
+\begin{multline}
+  \label{eq:binomial}
+  f_{P \mid N, \vec{X}}(p_i \mid n_i, \vec{x}_i; \vec{\betaup}) = \\
+  \binom{n_i}{p_i n_i} 
+  \pi(\vec{x}_i; \vec{\betaup})^{p_i n_i} 
+  \left[1 -\pi(\vec{x}_i; \vec{\betaup})\right]^{(1 - p_i) n_i}
+  \ .
+\end{multline}
+The expected value for each $p_i$ is naturally $\pi(\vec{x}_i;
+\vec{\betaup})$, the overall relative frequency of success given
+$\vec{x}_i$:
+\begin{equation}
+  \label{eq:E}
+  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
+  \pi(\vec{x}; \vec{\betaup})\ .
+\end{equation}
 
-\section{Current Evaluation Battery for ACE}
+Logistic regression models are typically fit by the maximum-likelihood
+technique, i.e., one is seeking a vector $\vec{\hat{\betaup}}$ to
+maximise the log-likelihood given the data:
+\begin{multline}
+  \label{eq:loglik}
+  \ell_{P \mid N, \vec{X}}
+  (\vec{\betaup}; \vec{p}, \vec{n}, \vec{X}) =
+  \sum_i \left\{
+    \log \binom{n_i}{p_i n_i} + \right. \\ \left.\phantom{\binom{x}{x}}
+    p_i n_i \log \pi(\vec{x}_i; \vec{\betaup}) + 
+    (1 - p_i) n_i \log \left[1 -\pi(\vec{x}_i; 
+      \vec{\betaup})\right]\right\}\ .
+\end{multline}
+One thus solves the system of likelihood equations for
+$\vec{\betaup}$, whereby the gradient of Equation~\ref{eq:loglik} is
+set to zero:
+\begin{equation}
+  \label{eq:gradient}
+  \nabla_{\vec{\betaup}}
+  \ell_{P \mid N, \vec{X}} 
+  (\vec{\betaup}; p_i, n_i, \vec{x}_i) =
+  \sum_i 
+  \left[p_i - \pi(\vec{x}_i; \vec{\betaup}) \right]
+  n_i \vec{x}_i = \vec{0}
+\end{equation}
+and so
+\begin{equation}
+  \label{eq:betahat}
+  \sum_i p_i n_i \vec{x}_i = 
+  \sum_i \pi(\vec{x}_i; \vec{\betaup}) n_i \vec{x}_i\ .
+\end{equation}
+In the case of \acro{MIREX} \acro{ACE} evaluation, $\vec{x}_i$ is simply an
+indicator vector that partitions the data by algorithm, and thus
+$\vec{\hat{\betaup}}$ is the parameter vector for which
+$\pi(\vec{x}_i; \vec{\betaup})$ equals the weighted mean of the $p_i$
+for the corresponding algorithm.
+
+\subsection{Quasi-Binomial Models}
+
+Under a strict logit model, the variance of each $p_i$ is inversely
+proportional to $n_i$:
+\begin{equation}
+  \label{eq:var}
+  \var\left[P \mid N, \vec{X}\right] = 
+  \left(\frac{1}{n}\right)
+  \pi(\vec{x}; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \ .
+\end{equation}
+Equation~\ref{eq:var} only holds, however, if the estimates of chord labels
+for each audio frame are independent. For \acro{ACE}, this is
+unrealistic: only the most naïve algorithms treat every frame
+independently; some kind of time-dependence structure is standard,
+most frequently a hidden Markov model or some close derivative
+thereof. Hence one should expect that the variance of \acro{WCSR}
+estimates would be rather larger than the basic logit model would
+suggest. 
+
+This type of problem is extremely common across disciplines,
+so much so that is has been given a name, \emph{over-dispersion}, and
+some authors go so far as to state that \enquote{unless there are good
+  external reasons for relying on the binomial assumption [of
+  independence], it seems wise to be cautious and to assume that
+  over-dispersion is present to some extent unless and until it is
+  shown to be absent} \cite[p.~125]{McCullagh1989}.
+One standard approach to handling over-dispersion is to use a
+so-called \emph{quasi-likelihood}
+\cite[\S\,4.7]{Agresti2007}. In case of logistic regression, this
+typically entails a modification to the assumption on the distribution
+of the $p_i$ that includes an additional \emph{dispersion parameter}
+$\phi$:
+\begin{equation}
+  \label{eq:quasi-E}
+  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
+  \pi(\vec{x}; \vec{\betaup})
+\end{equation}
+as before, but
+\begin{equation}
+  \label{eq:quasi-var}
+  \var\left[P \mid N, \vec{X}\right] \triangleq 
+  \left(\frac{\phi}{n}\right)
+  \pi(\vec{x}; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \ .
+\end{equation}
+These models are known as quasi-likelihood models because one loses a
+closed-form solution for the actual probability distribution $f_{P
+  \mid N, \vec{X}}$; one knows only that the $p_i$ behave something
+like binomially-distributed variables, with identical means but
+proportionally more variance. The parameter estimates
+$\vec{\hat{\betaup}}$ and predictions $\pi(\cdot;
+\vec{\hat{\betaup}})$ for a quasi-binomial model are the same as
+ordinary logistic regression, but the estimated variance-covariance
+matrices are scaled by the estimated dispersion parameter $\hat{\phi}$
+(and likewise the standard errors are scaled by its square root). The
+dispersion parameter is estimated so that the theoretical variance
+matches the empirical variance in the data, and because of the form of
+Equation~\ref{eq:quasi-var}, it renders any scaling considerations for
+the $n_i$ moot.
+
+\subsection{Generalised Estimating Equations (GEEs)}
+
+The quasi-binomial model achieves most of what one would be looking
+for when evaluating \acro{ACE} for \acro{MIREX}: it handles
+proportions naturally, is consistent with the weighted averaging used
+to compute \acro{WCSR}, adjusts for over-dispersion in a way that also
+eliminates any worries about scaling, and above all, it seems to fit
+the data well. Nonetheless, the quasi-binomial model is slightly
+over-conservative for evaluating \acro{ACE}. As discussed earlier,
+quasi-binomial models are necessary to account for over-dispersion,
+and one important source of over-dispersion in these data is the lack
+of independence of chord estimates from most algorithms within the
+same song. \acro{MIREX} exhibits another important violation of the independence
+assumption, however: all algorithms are tested on the same sets of
+songs, and some songs are clearly more difficult than others; put
+differently, one does not expect the algorithms to perform completely
+independently of one another on the same song but rather expects a
+certain correlation in performance across the set of songs. By taking
+that correlation into account, one can improve the precision of
+estimates, particularly the precision of pair-wise comparisons
+\cite[\S\,10.1]{Agresti2007}.
+
+A relatively straightforward variant of quasi-likelihood known as
+\emph{generalised estimating equations} (\acro{GEE}s) incorporates this type
+of correlation \cite[ch.~11]{Agresti2007}. With the \acro{GEE} approach, rather than
+predicting each $p_i$ individually, one predicts complete vectors of
+proportions $\vec{p}_i$ for each relevant group, much as Friedman's
+test seeks to estimate ranks within each group. For \acro{ACE},
+the groups are songs, and thus one considers the
+observations to be vectors $\vec{p}_i$, one for each song, where
+$p_{ij}$ represents the \acro{CSR} or segmentation score for algorithm $j$
+on song $i$. Analogous to the case of ordinary quasi-binomial or
+logistic regression,
+\begin{equation}
+  \label{eq:gee-E}
+  \mathbf{E}\left[P_j \mid N, \vec{X}_j\right] =
+  \pi(\vec{x}_j; \vec{\betaup})\ .   
+\end{equation}
+Likewise, analogous to the quasi-binomial variance estimate,
+\begin{equation}
+  \label{eq:gee-var}
+  \var\left[P_j \mid N, \vec{X}_j\right] \triangleq 
+  \left(\frac{\phi}{n}\right)
+  \pi(\vec{x}_j; \vec{\betaup}) 
+  \left[1 - \pi(\vec{x}_j); \vec{\betaup})\right]
+  \ .
+\end{equation}
+Because the \acro{GEE} approach is concerned with vector-valued estimates
+rather than point estimates, it also involves estimating a full
+variance-covariance matrix. In addition to $\vec{\betaup}$ and $\phi$,
+the approach requires a further vector of parameters $\vec{\alphaup}$
+and an \emph{a priori} assumption on correlation structure of the
+$P_j$ in the form of a function $R(\vec{\alphaup})$ that yields a
+correlation matrix. (One might, for example, assume that that the
+$P_j$ are \emph{exchangeable}, i.e., that every pair shares a common
+correlation coefficient.) Then if $B$ is a diagonal matrix such that
+$B_{jj} \triangleq \var\left[P_j \mid N, \vec{X}_j\right]$,
+\begin{equation}
+  \label{eq:gee-cov}
+  \cov\left[P \mid N, \vec{X}\right] \triangleq
+  B^{\sfrac{1}{2}} R(\vec{\alphaup}) B^{\sfrac{1}{2}}\ .
+\end{equation}
+If all of the $P_j$ are uncorrelated with each other, then this
+formula reduces to the basic quasi-binomial model, which assumes a
+diagonal covariance matrix. The final step of \acro{GEE} estimation
+adjusts Equation~\ref{eq:gee-cov} according to the actual correlations
+observed in the data, and as such, \acro{GEE} is quite robust in
+practice even when the \emph{a priori} assumptions about the
+correlation structure are incorrect \cite[\S\,11.4.2]{Agresti2007}.
+
+\subsection{Current Evaluation Battery for ACE}
 
 With 12 algorithms, 5 vocabularies plus a segmentation measure, and
 161 songs, the complete evaluation data \emph{Billboard} 2013 test set
@@ -371,7 +595,7 @@ logistic.summary <-
                test = adjusted("fdr")))
 @ 
 
-<<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, fig.out="\\linewidth", fig.cap=paste0("Boxplots and compact letter displays for the \\acro{MIREX} \\acro{ACE} 2013 results on the \\emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons with the Benjamini--Hochberg procedure to hold the false discovery rate at $\\alpha =$ .005 \\cite{Benjamini-Hochberg-1995}. Although Friedman's \\acro{ANOVA} detects slightly more significant pairwise differences than the logistic regression model (", sum(friedman.summary$test$pvalues < .005), " vs.\ ", sum(logistic.summary$test$pvalues < .005), "), it operates on a different scale than \\acro{CSR} and misorders algorithms relative to the headline results."), fig.subcap=c("Friedman's \\acro{ANOVA}", "Logistic Regression")>>=
+<<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, fig.out="\\linewidth", fig.cap=paste0("Boxplots and compact letter displays for the \\acro{MIREX} \\acro{ACE} 2013 results on the \\emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons with the Benjamini--Hochberg procedure to hold the false discovery rate at $\\alpha =$ .005 \\cite{Benjamini-Hochberg-1995}. Although Friedman's \\acro{ANOVA} detects slightly more significant pairwise differences than logistic regression (", sum(friedman.summary$test$pvalues < .005), " vs.\ ", sum(logistic.summary$test$pvalues < .005), "), it operates on a different scale than \\acro{CSR} and misorders algorithms relative to \\acro{WCSR}."), fig.subcap=c("Friedman's \\acro{ANOVA}", "Logistic Regression")>>=
 ## Compact letter displays require an extra top margin.
 par(mar = par("mar") + c(0, 0, 5, 0))
 ## Trick plot.cld into using the response for the Friedman ANOVA.
@@ -434,65 +658,50 @@ Inversions interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$)
 
 \begin{table*}
   \small
-  \centering  \begin{tabular}{lD{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}}
-    \toprule &
-    \colhead{\acro{KO2}$^\ast$} & \colhead{\acro{NMSD2}} &
-    \colhead{\acro{CB4}$^\ast$} & \colhead{\acro{NMSD1}} &
+  \centering  \begin{tabular}{clcD{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}}
+    \toprule 
+    \multicolumn{3}{c}{Algorithm} &
+    \colhead{\acro{KO2}} & \colhead{\acro{NMSD2}} &
+    \colhead{\acro{CB4}} & \colhead{\acro{NMSD1}} &
     \colhead{\acro{CB3}} & \colhead{\acro{KO1}} &
     \colhead{\acro{PP4}} & \colhead{\acro{PP3}} &
     \colhead{\acro{CF2}} & \colhead{\acro{NG1}} &
     \colhead{\acro{NG2}} \\
     \midrule
-    \acro{NMSD2} &     .25^\ast\\
-    \acro{CB4}$^\ast$ & .41^\ast &  .39^\ast\\
-    \acro{NMSD1} &     .30^\ast &  .60^\ast &  .53^\ast\\
-    \acro{CB3} &       .34^\ast &  .10      &  .76^\ast &  .42^\ast\\
-    \acro{KO1} &      -.04      & -.42^\ast & -.51^\ast & -.51^\ast & -.29^\ast\\
-    \acro{PP4} &      -.22      &  .08      & -.16      &  .06      & -.07      & -.05\\
-    \acro{PP3} &      -.49^\ast & -.46^\ast & -.61^\ast & -.53^\ast & -.37^\ast &  .68^\ast &  .22\\
-    \acro{CF2} &       .09      &  .19      &  .24^\ast &  .42^\ast &  .17      & -.49^\ast &  .06      & -.51^\ast\\
-    \acro{NG1} &      -.54^\ast & -.42^\ast & -.60^\ast & -.56^\ast & -.41^\ast &  .68^\ast &  .04      &  .85^\ast & -.47^\ast\\
-    \acro{NG2} &       .09      &  .17      &  .17      &  .16      & -.03      & -.50^\ast & -.09      & -.54^\ast &  .50^\ast & -.40^\ast\\
-    \acro{SB8} &      -.32^\ast & -.44^\ast & -.44^\ast & -.52^\ast & -.46^\ast &  .00      & -.32^\ast &  .08      & -.33^\ast &  .08      & -.16\\
+    & \acro{NMSD2} &&     .25^\ast\\
+    & \acro{CB4}   &&     .41^\ast &  .39^\ast\\
+    & \acro{NMSD1} &&     .30^\ast &  .60^\ast &  .53^\ast\\
+    & \acro{CB3} &&       .34^\ast &  .10      &  .76^\ast &  .42^\ast\\
+    & \acro{KO1} &&      -.04      & -.42^\ast & -.51^\ast & -.51^\ast & -.29^\ast\\
+    & \acro{PP4} &&      -.22      &  .08      & -.16      &  .06      & -.07      & -.05\\
+    & \acro{PP3} &&      -.49^\ast & -.46^\ast & -.61^\ast & -.53^\ast & -.37^\ast &  .68^\ast &  .22\\
+    & \acro{CF2} &&       .09      &  .19      &  .24^\ast &  .42^\ast &  .17      & -.49^\ast &  .06      & -.51^\ast\\
+    & \acro{NG1} &&      -.54^\ast & -.42^\ast & -.60^\ast & -.56^\ast & -.41^\ast &  .68^\ast &  .04      &  .85^\ast & -.47^\ast\\
+    & \acro{NG2} &&       .09      &  .17      &  .17      &  .16      & -.03      & -.50^\ast & -.09      & -.54^\ast &  .50^\ast & -.40^\ast\\
+    & \acro{SB8} &&      -.32^\ast & -.44^\ast & -.44^\ast & -.52^\ast & -.46^\ast &  .00      & -.32^\ast &  .08      & -.33^\ast &  .08      & -.16\\
     \bottomrule
   \end{tabular}
   \caption{Pearson's correlation matrix on the coefficients of the
     logistic regression fit \acro{(WCSR)} for the \emph{Billboard}
-    2013 test set with vocabulary V. $N =$ 161 songs per cell. Starred algorithms
-    incorporated local training on the \acro{MIREX} servers. Starred
+    2013 test set with vocabulary V. $N =$ 161 songs per cell. Starred
     correlations are significant at $\alpha =$ .005, controlling for false
     discoveries with the Benjamini--Hochberg procedure
-    \cite{Benjamini-Hochberg-1995}. Certain algorithms stand out for
+    \cite{Benjamini-Hochberg-1995}. A set of algorithms stands out for
     being negatively correlated with the top performers (viz.,
-    \acro{KO1}, \acro{PP3}, \acro{NG1}, and \acro{SB8}), suggesting
-    strategies that either are less successful for chord
-    estimation or have the potential to develop to overtake the leaders. }
+    \acro{KO1}, \acro{PP3}, \acro{NG1}, and \acro{SB8}); in general,
+    algorithms in this set did not attempt to recognise seventh chords.}
   \label{tab:cor}
 \end{table*}
 
-<<correlations, dependson="read-results", fig.width=7, fig.height=4.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
-with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
-     { ## It may not be necessary to change the contrast type, but it is safer.
-       .contrasts. <- contr.Sum(levels(algorithm))
-       contrasts(algorithm) <- .contrasts.
-       .vcov. <- vcov(geeglm(formula = performance ~ algorithm,
-                             family = binomial(link="logit"),
-                             corstr = "exchangeable",
-                             weights = duration, id = song))
-       logistic.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
-       logistic.cor <- cov2cor(logistic.vcov)
-       logistic.dist <- as.dist((1 - logistic.cor)/2) 
-       ## Confirm that the Friedman variance-covariance matrix is degenerate.
-       .vcov. <- vcov(glm(performance.rank ~ algorithm + song))
-       friedman.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
-       friedman.cor <- cov2cor(friedman.vcov)
-       friedman.dist <- as.dist((1 - friedman.cor)/2)
-       par(mar=par("mar")-c(4,0,0,0))
-       plot(hclust(logistic.dist, method="complete"),
-            main="", sub="",
-            ylab="Pearson's Distance", xlab="")
-     })
-@ 
+In general, algorithms that did not measure sevenths did not do
+well. Difference in vocabulary accounts for the separation between NG1
+and NG2, PP3 and PP4. The exception is KO1. Looking in detail at the
+results, training helped immensely. Restricting the results to 7th
+chords, KO1 only performs at 11 percent while KO2 achieves 46
+percent. This may be due to the data available for training. Most
+algorithms are trained on the Isophonics set, which has only 15
+percent seventh chords, but the \emph{Billboard} set has about 29
+percent seventh chords, nearly twice as many.
 
 \subsection{Outliers}
 
@@ -508,7 +717,7 @@ logistic.outliers <- with(billboard.2013, {
                          family = binomial(link="logit"),
                          corstr = "exchangeable",
                          weights = duration, id = song)
-  billboard.2013[abs(resid(logistic.fit)) > chauvenet * sd(resid(friedman.fit)),]
+  billboard.2013[abs(resid(logistic.fit)) > chauvenet * sd(resid(logistic.fit)),]
 })
 @ 
 
@@ -537,7 +746,29 @@ Comparative figure.
 
 \subsection{Correlation matrices}
 
-Include MDS figure(s).
+<<correlations, dependson="read-results", fig.width=7, fig.height=4.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
+with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
+     { ## It may not be necessary to change the contrast type, but it is safer.
+       .contrasts. <- contr.Sum(levels(algorithm))
+       contrasts(algorithm) <- .contrasts.
+       .vcov. <- vcov(geeglm(formula = performance ~ algorithm,
+                             family = binomial(link="logit"),
+                             corstr = "exchangeable",
+                             weights = duration, id = song))
+       logistic.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
+       logistic.cor <- cov2cor(logistic.vcov)
+       logistic.dist <- as.dist((1 - logistic.cor)/2) 
+       ## Confirm that the Friedman variance-covariance matrix is degenerate.
+       .vcov. <- vcov(glm(performance.rank ~ algorithm + song))
+       friedman.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
+       friedman.cor <- cov2cor(friedman.vcov)
+       friedman.dist <- as.dist((1 - friedman.cor)/2)
+       par(mar=par("mar")-c(4,0,0,0))
+       plot(hclust(logistic.dist, method="complete"),
+            main="", sub="",
+            ylab="Pearson's Distance", xlab="")
+     })
+@ 
 
 \subsection{Outliers}
 

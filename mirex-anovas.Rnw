@@ -333,7 +333,7 @@ maximise the log-likelihood given the data:
   \right\}.
 \end{multline}
 One thus solves the system of likelihood equations for
-$\vec{\betaup}$, whereby the gradient of equation (\ref{eq:loglik}) is
+$\vec{\betaup}$, whereby the gradient of Equation~\ref{eq:loglik} is
 set to zero:
 \begin{equation}
   \label{eq:gradient}
@@ -362,7 +362,7 @@ One might still wonder whether the scale of the weights $\vec{n}$ is
 important. Is the length of the song in seconds sufficient, or
 is it important to use more specific information about audio frame
 lengths and hop sizes?  For the purposes of fitting a logit model, it
-makes no difference: one can see from equation (\ref{eq:betahat}) that
+makes no difference: one can see from Equation~\ref{eq:betahat} that
 if one were to multiply $\vec{n}$ by any constant, these constants
 would cancel each other from each side of the equation and thus yield
 identical estimates $\vec{\hat{\betaup}}$ and in turn identical
@@ -387,7 +387,7 @@ the $n_i$ should be the exact number of audio frames that the
 algorithm $\vec{x}_i$ used to produce its estimations.
 
 There is a more serious problem with the variance of WCSR estimates,
-however, that subsumes the scaling issue. Equation (\ref{eq:var}) is
+however, that subsumes the scaling issue. Equation~\ref{eq:var} is
 based on the assumption that the estimates of chord labels for each
 audio frame are independent; if there is a positive correlation among
 the frames, the variance of the $p_i$ will be somewhat larger. Only
@@ -438,7 +438,7 @@ are scaled by the estimated dispersion parameter $\hat{\phi}$ (and
 likewise the standard errors are scaled by its square root). The
 dispersion parameter is estimated so that the theoretical variance
 matches the empirical variance in the data, and because of the form of
-equation~(\ref{eq:quasi-var}), it renders any scaling considerations
+Equation~\ref{eq:quasi-var}, it renders any scaling considerations
 for the $n_i$ moot.
 
 Quasi-binomial models are almost as easy to fit in R as ordinary logit
@@ -624,7 +624,7 @@ $B_{jj} \triangleq \var\left[P_j \mid N, \vec{X}_j\right]$,
 If all of the $P_j$ are uncorrelated with each other, then this
 formula reduces to the basic quasi-binomial model, which assumes a
 diagonal covariance matrix. The final step of GEE estimation adjusts
-equation~(\ref{eq:gee-cov}) according to the actual correlations
+Equation~\ref{eq:gee-cov} according to the actual correlations
 observed in the data, and as such, GEE is quite robust in practice
 even when the \emph{a priori} assumptions about the correlation
 structure are incorrect \citep[\S~11.4.2]{Agresti2007}.
@@ -704,7 +704,7 @@ The tables are somewhat difficult to interpret, however, because the
 differences between algorithms are taken with respect to the linear
 predictor $\vec{x}'\vec{\betaup}$ rather than the predicted values
 $\pi(\vec{x}; \vec{\betaup})$. It is a little easier to interpret the
-results as exponentiated confidence intervals. From equation~(\ref{eq:logit2}), one can see that exponentiating a
+results as exponentiated confidence intervals. From Equation~\ref{eq:logit2}, one can see that exponentiating a
 difference in predictions $\vec{x}_i'\vec{\hat{\betaup}} -
 \vec{x}_j'\vec{\hat{\betaup}}$ yields an \emph{odds ratio}
 \begin{equation}
