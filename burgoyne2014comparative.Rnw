@@ -123,7 +123,7 @@ detection~\cite{haas2011,khadkevich2013}. In an industry setting,
 music start-ups like
 Riffstation\footnote{\url{http://www.riffstation.com/}} and
 Chordify\footnote{\url{http://chordify.net}} use \acro{ACE} in their
-music teaching tools, and at time of writing Chordify attracts more
+music teaching tools, and at the time of writing, Chordify attracts more
 than 2 million unique visitors every month~\cite{haas2012}.
 
 % 2008: 13 teams, 15 algorithms
@@ -135,12 +135,12 @@ than 2 million unique visitors every month~\cite{haas2012}.
 
 In order to compare different algorithmic approaches in an impartial
 setting, the Music Information Retrieval Evaluation eXchange
-\acro{(MIREX)} audio chord estimation task was established as an
+\acro{(MIREX)} \acro{ACE} task was established as an
 annual event. Since its inception in 2008, between 11 and 18
 algorithms have been submitted each year by between 6 and 13
 teams. Despite the fact that \acro{ACE} algorithms are used outside of
 academic environments, and even though the number of \acro{MIREX}
-participants has decreased slightly the last three years, the problem
+participants has decreased slightly over the last three years, the problem
 of automatic chord estimation is nowhere near solved. On fresh
 validation data, the best-performing algorithms in 2013 estimated
 chords correctly only 75 percent of the time, and that only when the
@@ -258,7 +258,7 @@ type of analysis. The remainder of this paper describes how logistic
 regression can be used to compare chord estimation algorithms, using
 \acro{MIREX} results from last year to illustrate four key benefits:
 easier interpretation, greater statistical power, an inter-correlation
-for identify relationships among submitted algorithms, and better
+for identifying relationships among submitted algorithms, and better
 detection of outliers.
 
 \section{Logistic Regression with GEEs}\label{sec:logistic-regression}
@@ -607,7 +607,7 @@ Because the \acro{GEE} approach is concerned with vector-valued estimates
 rather than point estimates, it also involves estimating a full
 variance-covariance matrix. In addition to $\vec{\betaup}$ and $\phi$,
 the approach requires a further vector of parameters $\vec{\alphaup}$
-and an \emph{a priori} assumption on correlation structure of the
+and an \emph{a priori} assumption on the correlation structure of the
 $P_j$ in the form of a function $R(\vec{\alphaup})$ that yields a
 correlation matrix. (One might, for example, assume that that the
 $P_j$ are \emph{exchangeable}, i.e., that every pair shares a common
@@ -761,7 +761,7 @@ interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$) =$
 \Sexpr{round(logistic.vocab.anova[1,2], 2)},
 \Sexpr{FormatP(logistic.vocab.anova[1,3])}.
 
-\subsection{Correlation matrices}
+\subsection{Correlation Matrices}
 
 Table~\ref{tab:cor} presents the correlation matrix of the residuals
 after logistic regression on \acro{WCSR} for Vocabulary V. Friedman's
@@ -769,7 +769,7 @@ after logistic regression on \acro{WCSR} for Vocabulary V. Friedman's
 the same. Significant correlations are marked, again using the
 Benjamini--Hochberg procedure to control the \acro{FDR} at $\alpha =$
 .005. Positive correlations do not necessarily imply that the
-algorithms perform similarity; rather it implies that they find the
+algorithms perform similarly; rather it implies that they find the
 same songs relatively easy or difficult. Negative correlations imply
 that songs that one algorithm finds difficult are relatively easy for
 the other algorithm.
@@ -815,13 +815,13 @@ between algorithms, Friedman's \acro{ANOVA} was in fact more powerful
 than logistic regression, detecting a few extra significant pairs. A
 look at the boxplots in Figure~\ref{fig:cld-plots2}, however, causes
 one to question the scientific utility of that power. \acro{SB8}
-excepted, which was a buggy submission that erroneously return
+excepted, which was a buggy submission that erroneously returned
 alternating C- and B-major chords regardless of the song, all of the
-algorithms perform fairly similarly in absolute terms. Although
+algorithms performed fairly similarly in absolute terms. Although
 further testing might be warranted, it seems that the ranking step may
 for this task exaggerate slight differences in performance that would
 be inconsequential for most applications. Furthermore, having now
-benefited from years of study, \acro{WCSR} is reasonably intuitive and
+benefited from years of study, \acro{WCSR} is a reasonably intuitive and
 well-motivated measure of \acro{ACE} performance, and it is awkward to
 have to work on the Friedman's rank scale instead, especially since it
 ultimately ranks the algorithms' overall performance in a slightly
@@ -886,8 +886,7 @@ with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
 
 Our analysis of outliers again showed Friedman's \acro{ANOVA} to be
 somewhat underpowered relative to logistic regression. It highlighted
-the practical consequences of the well-known problem of atypically
-tuned commercial recordings. Although we would not propose deleting
+the practical consequences of the well-known problem of atypically-tuned commercial recordings. Although we would not propose deleting
 outliers, it is sobering to know that tuning problems may be having an
 outsized effect on our headline evaluation figures. It might be worth
 considering allowing algorithms their best score in keys up to a
@@ -898,7 +897,7 @@ its evaluation becomes more thorough, it is useful to use a subtler
 statistical model for comparative analysis. We recommend that future
 \acro{MIREX} \acro{ACE} evaluations use logistic regression in
 preference to Friedman's \acro{ANOVA}. It preserves the natural units
-and scales of the \acro{WCSR} and segementation analysis test, is more
+and scales of \acro{WCSR} and segementation analysis, is more
 powerful for many (although not all) statistical tests, and crucially,
 it allows for a more detailed correlational analysis of which
 algorithms tend have problems with the same songs as others and which
@@ -906,7 +905,7 @@ have perhaps genuinely broken innovative ground. This is by no means
 to suggest that Friedman's test is a bad test in general -- its
 near-universal applicability makes it an excellent choice in many
 circumstances, including many other \acro{MIREX} evaluations -- but
-for \acro{ACE}, we believe extra understanding logistic regression can
+for \acro{ACE}, we believe that the extra understanding logistic regression can
 offer may help researchers predict which techniques are most promising
 for breaking the current performance plateau.
 
