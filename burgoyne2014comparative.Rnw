@@ -237,6 +237,12 @@ parametric alternatives where the distribution is known, and the rank
 transformation can obscure information inherent to the underlying
 measurement, magnifying trivial differences and neutralising
 significant inter-correlations.
+\Bas{There is another drawback of the Friedman test, it cannot naturally
+handle weighted evauation scores, such as the \arc{WCSR}. 
+In the particular case of chord labelling the experimenter would
+prefer the \acro{WCSR} over the \acro{CSR}~\cite{Pauwels-Peeters-2013},
+but he can only use the \acro{CSR} for statistical anlalysis using the
+Friedman test.}
 
 There is no need to pay the costs of Friedman's \acro{ANOVA} for
 evaluating chord estimation, however. Fundamentally, \acro{WCSR} is a
