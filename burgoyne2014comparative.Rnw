@@ -3,6 +3,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
+\usepackage{txfonts} % needed for \betaup 
 \usepackage{csquotes}
 \usepackage{url}
 \usepackage{xcolor}
@@ -87,7 +88,12 @@ FormatP <- function(p) {
 %
 \begin{abstract}
   For \acro{MIREX} 2013, the audio chord estimation \acro{(ACE)} task
-  used a new evaluation scheme. Using chord vocabularies of differing
+  used a new evaluation scheme. 
+  \Bas{I'm not the native speaker here ;-), but can you really say this:
+  ``a task \dots used''? If so, fine, otherwise I'd suggests something like:
+  ``In the 2013 audio chord estimation task \acro(ACE) a new evaluation scheme
+  was used.''}%
+  Using chord vocabularies of differing
   complexity as well as segmentation measures, the new scheme provides
   more information than the \acro{ACE} evaluations from previous
   years. With this new information, however, comes new interpretive
@@ -144,8 +150,8 @@ participants has decreased slightly over the last three years, the problem
 of automatic chord estimation is nowhere near solved. On fresh
 validation data, the best-performing algorithms in 2013 estimated
 chords correctly only 75 percent of the time, and that only when the
-range of possible chords was restricted exclusively to the 24 major
-and minor chords; the performance figure drops to 60 percent when the
+range of possible chords was restricted exclusively to the 25 major,
+minor and ``no-chord'' labels; the performance figure drops to 60 percent when the
 evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-results}).
 
 \begin{table*}
@@ -181,6 +187,8 @@ evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-resul
     with sevenths and inversions; VI: mean segmentation score; VII:
     under-segmentation; VIII: over-segmentation. Adapted from the
     \acro{MIREX} Wiki.}
+    \Bas{If we really need the space, this table could be fit into 
+    one column}
   \label{tab:mirex-results}
 \end{table*}
 
@@ -192,11 +200,12 @@ calculating the \emph{chord symbol recall} \acro{(CSR)}, which
 reflected the proportion of correctly labelled chords, and a
 \emph{weighted chord symbol recall} \acro{(WCSR)}, which weighted the
 grand average by the length of a song, using a vocabulary of 12 major
-and minor chords. At \acro{ISMIR} 2010, a group of ten researchers met
+chords, 12 minor chords and a ``no-chord'' label. 
+At \acro{ISMIR} 2010, a group of ten researchers met
 to discuss their dissatisfaction with the \acro{ACE} evaluation
 measures. In the resulting \enquote{Utrecht Agreement}, it was
 proposed that future evaluations should include more diverse chord
-vocabularies, such as seventh chords and inversions, as the 24-chord
+vocabularies, such as seventh chords and inversions, as the 25-chord
 vocabulary was considered a rather coarse representation of tonal
 harmony.\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
 Furthermore, the group agreed that it was important to include a
@@ -226,6 +235,10 @@ been used for this purpose, accompanied by Tukey's Honest Significant
 Difference tests for each pair of algorithms. Friedman's \acro{ANOVA}
 is equivalent to a standard two-way \acro{ANOVA} with the actual
 measurements (in our case \acro{WCSR} or the new segmentation measure)
+\Bas{In this paper we refer to ``the new segmentation measure'' or
+something similar. I think it would be a good idea to give this new
+segmentation measure a proper name. Maybe we can just call it 
+Directional Hamming Distance (\acro{DHD}?)}%
 replaced by the rank of each treatment (in our case, each algorithm)
 on that measure within each block (in our case, for each song)
 \cite{Kutner2005}. The rank transformation makes
@@ -256,12 +269,20 @@ naturally into \emph{logistic regression} (i.e., a \emph{logit
 between 0 and 100 percent, and thus it is also suitable for the same
 type of analysis. The remainder of this paper describes how logistic
 regression can be used to compare chord estimation algorithms, using
-\acro{MIREX} results from last year to illustrate four key benefits:
+\acro{MIREX} results from last year 
+\Bas{I would say: ``2013", as the ``last year'' will change on a regular basis}%
+to illustrate four key benefits:
 easier interpretation, greater statistical power, an inter-correlation
 for identifying relationships among submitted algorithms, and better
 detection of outliers.
 
 \section{Logistic Regression with GEEs}\label{sec:logistic-regression}
+\Bas{In this section the term 
+$\pi(\vec{x}; \vec{\betaup}) [1 - \pi(\vec{x}; \vec{\betaup})]$
+occurs frequently. Often $\betaup$ and $\vec{x}$ are correctly 
+used in the formula, but not addressed specifically. I wonder whether
+in some of the formulas it would not be clearer to leave out $\betaup$ and 
+$\vec{x}$, and just write $\pi[1 - \pi]$.}
 
 Proportions cannot be distributed normally because they are supported
 exclusively on [0, 1], and thus they present challenges for
@@ -396,6 +417,9 @@ as before, but
   \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
   \ .
 \end{equation}
+\Bas{I guess that $\triangleq$ means equal by definition? I haven't seen
+the $\triangleq$ very frequently. Is it very common in the Logistic 
+regression communities?}%
 These models are known as quasi-likelihood models because one loses a
 closed-form solution for the actual probability distribution $f_{P
   \mid N, \vec{X}}$; one knows only that the $p_i$ behave something
@@ -574,7 +598,16 @@ plot(cld(logistic.summary, level=.005),
   \subfloat[Logistic Regression\label{fig:cld-plots2}]{
     \centering \includegraphics[width=0.45\maxwidth]{figure/cld-plots2} 
   }
-  \caption{Boxplots and compact letter displays for the \acro{MIREX} \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons to hold the \acro{FDR} at $\alpha =$ .005. Although Friedman's \acro{ANOVA} detects slightly more significant pairwise differences than logistic regression (\Sexpr{sum(friedman.summary$test$pvalues < .005)} vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it operates on a different scale than \acro{CSR} and misorders algorithms relative to \acro{WCSR}.}
+  \caption{
+  \Bas{Is it WCSR or CSR that is displayed here? (the caption on 
+  the y-axis states CSR)}
+  Boxplots and compact letter displays for the \acro{MIREX} \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons to hold the \acro{FDR} at $\alpha =$ .005. Although Friedman's \acro{ANOVA} detects slightly more significant pairwise differences than logistic regression (\Sexpr{sum(friedman.summary$test$pvalues < .005)} vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it operates on a different scale than \acro{CSR} and misorders algorithms relative to \acro{WCSR}.
+\Bas{I compared the Friedman test results with the Matlab script that has 
+been used in MIREX for ages and that I've adapted to MIREX ACE 2013. 
+This Friedman analysis gives slightly different result. I guess this 
+is because CSR is taken into account instead of WCSR? In ``the Matlab 
+Friedman'' only 41 significant differences can be discerned.}  
+  }
   \label{fig:cld-plots}  
 \end{figure*}
 
@@ -603,6 +636,7 @@ Likewise, analogous to the quasi-binomial variance,
   \left[1 - \pi(\vec{x}_j); \vec{\betaup})\right]
   \ .
 \end{equation}
+\Bas{There is one `)' to many in Equation~\ref{eq:gee-var}.}%
 Because the \acro{GEE} approach is concerned with vector-valued estimates
 rather than point estimates, it also involves estimating a full
 variance-covariance matrix. In addition to $\vec{\betaup}$ and $\phi$,
@@ -801,7 +835,10 @@ a sample of this size is to lie more than \Sexpr{round(chauvenet, 2)}
 standard deviations from the mean. 
 \Bas{A reference would be nice here.}
 No data point met this criterion
-under Friedman's \acro{ANOVA}. The most extreme residuals occur for
+under Friedman's \acro{ANOVA}. 
+\Bas{This is what you would expect, right? After all, outliers 
+are removed by the ranking process.}
+The most extreme residuals occur for
 algorithm \acro{SB8}, on songs that were so difficult for most
 algorithms that the essentially random approach of \acro{SB8}, due to
 its software bug, did better. Under the logistic regression model,
