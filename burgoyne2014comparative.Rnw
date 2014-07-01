@@ -798,6 +798,8 @@ interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$) =$
 \Sexpr{round(logistic.vocab.anova[1,2], 2)},
 \Sexpr{FormatP(logistic.vocab.anova[1,3])}.
 
+\Johan{I would mention that only 1 algo supports inversions, now it's only mentioned in the table and not in the text (as far as I can see) and it's pretty relevant there with the algo x complexity interaction.}
+
 \subsection{Correlation Matrices}
 
 Table~\ref{tab:cor} presents the correlation matrix of the residuals
