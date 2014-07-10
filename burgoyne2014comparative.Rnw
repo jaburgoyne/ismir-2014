@@ -35,17 +35,9 @@
 }
 
 \threeauthors
-  {First author} {Affiliation$1$ \\ {\tt author1@ismir.edu}
-    \thanks{Acknowledgements withheld to support blind review.}
-}
-  {Second author} {\bf Retain these fake authors in\\\bf submission to preserve the formatting}
-  {Third author} {Affiliation$3$ \\ {\tt author3@ismir.edu}}
-
-% Post-review
-% \threeauthors
-%   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
-%   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
-%   {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
+  {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
+  {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
+  {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
   
 \begin{document}
 <<global-opts, cache=FALSE, include=FALSE>>=
