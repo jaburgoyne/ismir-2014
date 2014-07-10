@@ -3,7 +3,6 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
-\usepackage{txfonts} % needed for \betaup 
 \usepackage{csquotes}
 \usepackage{url}
 \usepackage{xcolor}
@@ -37,7 +36,7 @@
 \threeauthors
   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
-  {Johan Pauwels} {{\tt johan.pauwels@gmail.com}}
+  {Johan Pauwels} {IRCAM \\ {\tt johan.pauwels@gmail.com}}
   
 \begin{document}
 <<global-opts, cache=FALSE, include=FALSE>>=

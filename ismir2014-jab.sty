@@ -56,7 +56,6 @@
 % JAB: Free Times fonts have no small caps.
 \renewcommand{\sfdefault}{phv}
 % \renewcommand{\rmdefault}{ptm}
-\renewcommand{\ttdefault}{pcr}
 \RequirePackage{mathptmx}
 \IfFileExists{TimesLTStd.sty}
 {
@@ -74,9 +73,11 @@
   \DeclareMathAlphabet{\mathit}{\encodingdefault}{\mathdefault}{m}{it}
   \DeclareMathAlphabet{\mathbf}{\encodingdefault}{\mathdefault}{b}{n}
   \SetMathAlphabet{\mathit}{bold}{\encodingdefault}{\mathdefault}{b}{it}
-}{}
-\RequirePackage[tracking,letterspace=60,babel]{microtype}
+}{
+  \RequirePackage{txfonts}
+}
 \renewcommand{\ttdefault}{pcr}
+\RequirePackage[tracking,letterspace=60,babel]{microtype}
 
 \setlength{\paperheight}{297mm}
 \setlength{\paperwidth}{210mm}
