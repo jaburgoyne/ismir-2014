@@ -36,7 +36,7 @@
 \threeauthors
   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
-  {Johan Pauwels} {IRCAM \\ {\tt johan.pauwels@gmail.com}}
+  {Johan Pauwels} {STMS IRCAM-CNRS-UPMC\footnote{The author no longer works here} \\ {\tt johan.pauwels@gmail.com}}
   
 \begin{document}
 <<global-opts, cache=FALSE, include=FALSE>>=
@@ -185,7 +185,7 @@ evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-resul
 
 \acro{MIREX} is a terrific platform for evaluating the performance of
 \acro{ACE} algorithms, but by 2010 it was already being recognised
-that the evaluation rubrics could be improved. At that time, the
+that the evaluation rubrics\Johan{Now there's an English word I've never heard before, maybe you could simplify this for me and other non-native speakers, Ashley} could be improved. At that time, the
 quality of automatically extracted chord sequences was evaluated by
 calculating the \emph{chord symbol recall} \acro{(CSR)}, which
 reflected the proportion of correctly labelled chords, and a
@@ -230,6 +230,7 @@ measurements (in our case \acro{WCSR} or the new segmentation measure)
 something similar. I think it would be a good idea to give this new
 segmentation measure a proper name. Maybe we can just call it 
 Directional Hamming Distance (\acro{DHD}?)}%
+\Johan{Good point, a quick search learns me that DHD seems to be the already established name and it's not that new in fact. It comes from the image segmentation field and has been first used for music in Abdallah et al. 2005 ISMIR paper. See also http://ismir2008.ismir.net/papers/ISMIR2008_219.pdf, we'd better also reattribute the citations on line 216.}
 replaced by the rank of each treatment (in our case, each algorithm)
 on that measure within each block (in our case, for each song)
 \cite{Kutner2005}. The rank transformation makes
@@ -260,8 +261,7 @@ naturally into \emph{logistic regression} (i.e., a \emph{logit
 between 0 and 100 percent, and thus it is also suitable for the same
 type of analysis. The remainder of this paper describes how logistic
 regression can be used to compare chord estimation algorithms, using
-\acro{MIREX} results from last year 
-\Bas{I would say: ``2013", as the ``last year'' will change on a regular basis}%
+\acro{MIREX} results from 2013 
 to illustrate four key benefits:
 easier interpretation, greater statistical power, an inter-correlation
 for identifying relationships among submitted algorithms, and better
@@ -411,6 +411,7 @@ as before, but
 \Bas{I guess that $\triangleq$ means equal by definition? I haven't seen
 the $\triangleq$ very frequently. Is it very common in the Logistic 
 regression communities?}%
+\Johan{Just as a second opinion, for me it is very well known as a mathematical notation I already encountered in secondary school, not specific to LR communities}
 These models are known as quasi-likelihood models because one loses a
 closed-form solution for the actual probability distribution $f_{P
   \mid N, \vec{X}}$; one knows only that the $p_i$ behave something
@@ -610,7 +611,7 @@ proportions $\vec{p}_i$ for each relevant group, much as Friedman's
 test seeks to estimate ranks within each group. For \acro{ACE},
 the groups are songs, and thus one considers the
 observations to be vectors $\vec{p}_i$, one for each song, where
-$p_{ij}$ represents the \acro{CSR} or segmentation score for algorithm $j$
+$p_{ij}$ represents the \acro{CSR}\Johan{in the end, isn't it always WCSR that is used now that it is clear that the weighting can be handled?} or segmentation score for algorithm $j$
 on song $i$. Analogous to the case of ordinary quasi-binomial or
 logistic regression,
 \begin{equation}
@@ -701,7 +702,7 @@ directly but the per-song ranks with respect to
 \acro{CSR}. Figure~\ref{fig:cld-plots2} comes from quasi-binomial
 regression estimated with \acro{GEE}s, as described in
 Section~\ref{sec:logistic-regression}. Its $y$-axis reflects per-song
-\acro{CSR} directly. In the interest of reproducible research, we used
+\acro{CSR}\Johan{same remark about WCSR vs CSR} directly. In the interest of reproducible research, we used
 a stricter $\alpha =$ .005 threshold for reporting pairwise
 comparisons with the more contemporary false-discovery-rate
 \acro{(FDR)} approach of Benjamini and Hochberg as opposed to more
@@ -783,7 +784,7 @@ $F($\Sexpr{friedman.vocab.anova[5,2]},
 \Sexpr{round(friedman.vocab.anova[5,3], 2)},
 \Sexpr{FormatP(friedman.vocab.anova[5,4])}, but inversion was
 significant neither as a main effect nor as part of any
-interaction. The logistic regression model, in contrast, identified a
+interaction.\Johan{wouldn't it be clearer to say "insignificant both as a main effect and as ..."? The significant followed by a negation slightly bothers me :-)} The logistic regression model, in contrast, identified a
 three-way Algorithm $\times$ Complexity $\times$ Inversions
 interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$) =$
 \Sexpr{round(logistic.vocab.anova[1,2], 2)},
@@ -854,13 +855,13 @@ excepted, which was a buggy submission that erroneously returned
 alternating C- and B-major chords regardless of the song, all of the
 algorithms performed fairly similarly in absolute terms. Although
 further testing might be warranted, it seems that the ranking step may
-for this task exaggerate slight differences in performance that would
+-- for this task -- exaggerate slight differences in performance that would
 be inconsequential for most applications. Furthermore, having now
 benefited from years of study, \acro{WCSR} is a reasonably intuitive and
 well-motivated measure of \acro{ACE} performance, and it is awkward to
 have to work on the Friedman's rank scale instead, especially since it
 ultimately ranks the algorithms' overall performance in a slightly
-different order than the headline \acro{WCSR}-based results.
+different order than the headline \acro{WCSR}-based results.\Johan{Why is this?}
 
 Friedman's \acro{ANOVA} did exhibit substantially less power for our
 question about interactions between algorithms and differing chord
@@ -888,10 +889,10 @@ which does not seem to correlate strongly with any other
 algorithm. Table~\ref{tab:mirex-results} uncovers the secret behind
 the low performance: \acro{KO1} excepted, none of the low-performing
 algorithms attempt to recognise seventh chords, which comprise 29~percent
-of all chords under Vocabulary V. Furthermore, although \acro{KO1} can
-recognise seventh chords in theory, it was mostly likely trained on
+of all chords under Vocabulary V. Furthermore, we performed an additional evaluation of seventh chords only, in the style of~\cite{Pauwels-Peeters-2013} and using their software available online\footnote{\url{https://github.com/jpauwels/MusOOEvaluator}}. From the resulting low score of \acro{KO1}, we can deduce that this algorithm is able to
+recognise seventh chords in theory, but that it was mostly likely trained on
 the relatively seventh-poor Isophonics corpus (only 15 percent of all
-chords); \acro{KO2} is the same algorithm trained locally on an
+chords). On the other hand, \acro{KO2} is the same algorithm trained locally on an
 independent tranche of the \emph{Billboard} corpus, and with that
 training, it becomes a top performer. 
 
