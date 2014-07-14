@@ -1,18 +1,51 @@
 \documentclass[a4paper]{article}
-\usepackage{ismir2014-jab,amsmath,cite}
+\usepackage{ismir,amsmath,cite}
 
+% The style file neglects to change math to Times.
+\IfFileExists{newtxmath.sty}
+{
+  \usepackage{newtxmath}
+  \newcommand*{\mathdefault}{ntxrx}
+  \DeclareSymbolFont{operators}{\encodingdefault}{\mathdefault}{m}{n}
+  \SetSymbolFont{operators}{bold}{\encodingdefault}{\mathdefault}{b}{n}
+  \DeclareMathAlphabet{\mathit}{\encodingdefault}{\mathdefault}{m}{it}
+  \DeclareMathAlphabet{\mathbf}{\encodingdefault}{\mathdefault}{b}{n}
+  \SetMathAlphabet{\mathit}{bold}{\encodingdefault}{\mathdefault}{b}{it}
+  % newtxmath imports the plus sign incorrectly
+  \DeclareMathSymbol{+}{\mathbin}{operators}{`+}
+}{
+  \usepackage{txfonts}
+}
+
+% Use pro Times font for small caps if possible.
+\IfFileExists{TimesLTStd.sty}
+{
+  \usepackage{TimesLTStd}
+  \newcommand*{\acro}[1]{\textsc{\MakeLowercase{##1}}}
+  % But small caps look off in headings.
+  \usepackage{titlesec}
+  \titleformat{\section}%
+  {\fontfamily{TimesLTStd-TLF}\bfseries\selectfont\centering\uppercase}%
+  {\thesection.}{0.6em}{}
+  \titleformat{\subsection}%
+  {\fontfamily{TimesLTStd-TLF}\bfseries\selectfont\raggedright}%
+  {\thesubsection}{0.6em}{}
+}{
+  \newcommand*{\acro}[1]{\relax ##1}
+}
+
+% Reset fonts from the standard style file and make the formatting nice.
+\renewcommand{\sfdefault}{phv}
+\renewcommand{\ttdefault}{pcr}
+\usepackage[tracking,letterspace=55,babel]{microtype}
+\usepackage{url}
+
+% Ensure that the input is internationally capable.
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
 \usepackage{csquotes}
-\usepackage{url}
-\usepackage{xcolor}
 
-\usepackage{vector}
-\renewcommand*{\vec}[1]{\ensuremath{\boldsymbol{\bvec{#1}}}}
-\DeclareMathOperator{\var}{var}
-\DeclareMathOperator{\cov}{cov}
-\usepackage{xfrac}
-
+% Prepare nicer tables and figures.
 \usepackage{booktabs}
 \usepackage{dcolumn}
 \newcommand{\colhead}[1]{\multicolumn{1}{c}{#1}}
@@ -22,7 +55,15 @@
 \newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
 \usepackage{graphicx}
 
-% for creating comments
+% Use proper math notation.
+\usepackage{vector}
+\renewcommand*{\vec}[1]{\ensuremath{\boldsymbol{\bvec{#1}}}}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+\usepackage{xfrac}
+
+% For creating comments
+\usepackage{xcolor}
 \newcommand{\wrap}[3]{{\small \textcolor{#2}{[\textbf{#1:} #3]}}}
 \newcommand{\Bas}[1]{\wrap{Bas}{blue}{#1}}
 \newcommand{\Ashley}[1]{\wrap{Ashley}{red}{#1}}
@@ -33,10 +74,32 @@
   What can we learn from MIREX ACE $\mathbf{2013}$?%
 }
 
+% The style file can't handle titles with any formatting.
+\renewcommand{\permission}{%
+\begin{figure}[b]{%
+\footnotesize
+%{\includegraphics[height=0.45cm]{figs/88x31}}
+{\includegraphics[height=0.45cm]{figs/cc_by.pdf}}
+\vskip -.45cm
+\begin{spacing}{1.1}
+\hskip 1.5cm \copyright \hskip .1cm \authorname.\\
+Licensed under a Creative Commons Attribution 4.0 International License (\acro{CC BY} 4.0).
+{\bf Attribution: } \authorname.
+``On comparative statistics for labelling tasks: What can we learn from \acro{MIREX ACE} 2013?'',
+\conferenceedition\ International Society for Music Information Retrieval Conference,  \conferenceyear.
+\end{spacing}
+}
+\end{figure}
+}
+
 \threeauthors
   {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
   {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
-  {Johan Pauwels} {STMS IRCAM-CNRS-UPMC\footnote{The author no longer works here} \\ {\tt johan.pauwels@gmail.com}}
+  {Johan Pauwels} {STMS IRCAM-CNRS-UPMC \\ {\tt
+      johan.pauwels@gmail.com}\thanks{Johan Pauwels is no longer
+      affiliated with IRCAM. Data and source code for this paper, including
+    that necessary to reproduce all statistics and figures, is
+    available from \protect\url{http://bitbucket.org/jaburgoyne/ismir-2014}.}}
   
 \begin{document}
 <<global-opts, cache=FALSE, include=FALSE>>=
@@ -230,7 +293,7 @@ measurements (in our case \acro{WCSR} or the new segmentation measure)
 something similar. I think it would be a good idea to give this new
 segmentation measure a proper name. Maybe we can just call it 
 Directional Hamming Distance (\acro{DHD}?)}%
-\Johan{Good point, a quick search learns me that DHD seems to be the already established name and it's not that new in fact. It comes from the image segmentation field and has been first used for music in Abdallah et al. 2005 ISMIR paper. See also http://ismir2008.ismir.net/papers/ISMIR2008_219.pdf, we'd better also reattribute the citations on line 216.}
+\Johan{Good point, a quick search learns me that DHD seems to be the already established name and it's not that new in fact. It comes from the image segmentation field and has been first used for music in Abdallah et al. 2005 ISMIR paper. See also \url{http://ismir2008.ismir.net/papers/ISMIR2008_219.pdf}, we'd better also reattribute the citations on line 216.}
 replaced by the rank of each treatment (in our case, each algorithm)
 on that measure within each block (in our case, for each song)
 \cite{Kutner2005}. The rank transformation makes
@@ -402,16 +465,12 @@ $\phi$:
 as before, but
 \begin{equation}
   \label{eq:quasi-var}
-  \var\left[P \mid N, \vec{X}\right] \triangleq 
+  \var\left[P \mid N, \vec{X}\right] = 
   \left(\frac{\phi}{n}\right)
   \pi(\vec{x}; \vec{\betaup}) 
   \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
   \ .
 \end{equation}
-\Bas{I guess that $\triangleq$ means equal by definition? I haven't seen
-the $\triangleq$ very frequently. Is it very common in the Logistic 
-regression communities?}%
-\Johan{Just as a second opinion, for me it is very well known as a mathematical notation I already encountered in secondary school, not specific to LR communities}
 These models are known as quasi-likelihood models because one loses a
 closed-form solution for the actual probability distribution $f_{P
   \mid N, \vec{X}}$; one knows only that the $p_i$ behave something
@@ -622,7 +681,7 @@ logistic regression,
 Likewise, analogous to the quasi-binomial variance,
 \begin{equation}
   \label{eq:gee-var}
-  \var\left[P_j \mid N, \vec{X}_j\right] \triangleq 
+  \var\left[P_j \mid N, \vec{X}_j\right] =
   \left(\frac{\phi}{n}\right)
   \pi(\vec{x}_j; \vec{\betaup}) 
   \left[1 - \pi(\vec{x}_j); \vec{\betaup})\right]
@@ -638,10 +697,10 @@ $P_j$ in the form of a function $R(\vec{\alphaup})$ that yields a
 correlation matrix. (One might, for example, assume that that the
 $P_j$ are \emph{exchangeable}, i.e., that every pair shares a common
 correlation coefficient.) Then if $B$ is a diagonal matrix such that
-$B_{jj} \triangleq \var\left[P_j \mid N, \vec{X}_j\right]$,
+$B_{jj} = \var\left[P_j \mid N, \vec{X}_j\right]$,
 \begin{equation}
   \label{eq:gee-cov}
-  \cov\left[P \mid N, \vec{X}\right] \triangleq
+  \cov\left[P \mid N, \vec{X}\right] =
   B^{\sfrac{1}{2}} R(\vec{\alphaup}) B^{\sfrac{1}{2}}\ .
 \end{equation}
 If all of the $P_j$ are uncorrelated with each other, then this
