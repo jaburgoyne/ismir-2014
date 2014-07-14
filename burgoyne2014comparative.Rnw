@@ -141,50 +141,45 @@ FormatP <- function(p) {
 \maketitle
 %
 \begin{abstract}
-  For \acro{MIREX} 2013, the audio chord estimation \acro{(ACE)} task
-  used a new evaluation scheme. 
-  \Bas{I'm not the native speaker here ;-), but can you really say this:
-  ``a task \dots used''? If so, fine, otherwise I'd suggests something like:
-  ``In the 2013 audio chord estimation task \acro(ACE) a new evaluation scheme
-  was used.''}%
-  Using chord vocabularies of differing
-  complexity as well as segmentation measures, the new scheme provides
-  more information than the \acro{ACE} evaluations from previous
-  years. With this new information, however, comes new interpretive
-  challenges. What are the correlations among different songs and,
-  more importantly, different submissions across the new measures?
-  Performance falls off for all submissions as the vocabularies
-  increase in complexity, but does it do so directly in proportion to
-  the number of more complex chords, or are certain algorithms indeed
-  more robust? What are the outliers, song-algorithm pairs where the
-  performance was substantially higher or lower than would be
-  predicted, and how can they be explained? Answering these questions
-  requires moving beyond the Friedman tests that have most often been
-  used to compare algorithms to a richer underlying model. We propose
-  a logistic-regression approach for generating comparative statistics
-  for \acro{MIREX} \acro{ACE}, supported with generalised estimating
-  equations \acro{(GEEs)} to correct for repeated measures. We use the
-  \acro{MIREX} 2013 \acro{ACE} results as a case study to illustrate
-  our proposed method, including some of interesting aspects of the
-  evaluation that might not apparent from the headline results alone.
+  For \acro{MIREX} 2013, the evaluation of audio chord estimation
+  \acro{(ACE)} followed a new scheme.  Using chord vocabularies of
+  differing complexity as well as segmentation measures, the new
+  scheme provides more information than the \acro{ACE} evaluations
+  from previous years. With this new information, however, comes new
+  interpretive challenges. What are the correlations among different
+  songs and, more importantly, different submissions across the new
+  measures?  Performance falls off for all submissions as the
+  vocabularies increase in complexity, but does it do so directly in
+  proportion to the number of more complex chords, or are certain
+  algorithms indeed more robust? What are the outliers, song-algorithm
+  pairs where the performance was substantially higher or lower than
+  would be predicted, and how can they be explained? Answering these
+  questions requires moving beyond the Friedman tests that have most
+  often been used to compare algorithms to a richer underlying
+  model. We propose a logistic-regression approach for generating
+  comparative statistics for \acro{MIREX} \acro{ACE}, supported with
+  generalised estimating equations \acro{(GEEs)} to correct for
+  repeated measures. We use the \acro{MIREX} 2013 \acro{ACE} results
+  as a case study to illustrate our proposed method, including some of
+  interesting aspects of the evaluation that might not apparent from
+  the headline results alone.
 \end{abstract}
 %
 \section{Introduction}\label{sec:introduction}
 
 Automatic chord estimation \acro{(ACE)} has a long tradition within
-the music information retrieval \acro{(MIR)} community, and
-(automatically extracted) chords are generally recognised as a useful
-mid-level representation in academia as well as in industry. For
-instance, in an academic context it has been shown that chords are
-interesting for addressing musicological
-hypotheses~\cite{mauch2007,burgoynephd}, and that they can be used as
-a mid-level feature to aid in retrieval tasks like cover-song
-detection~\cite{haas2011,khadkevich2013}. In an industry setting,
-music start-ups like
+the music information retrieval \acro{(MIR)} community, and chord
+transcriptions are generally recognised as a useful mid-level
+representation in academia as well as in industry. For instance, in an
+academic context it has been shown that chords are interesting for
+addressing musicological hypotheses~\cite{mauch2007,burgoynephd}, and
+that they can be used as a mid-level feature to aid in retrieval tasks
+like cover-song detection~\cite{haas2011,khadkevich2013}. In an
+industrial setting, music start-ups like
 Riffstation\footnote{\url{http://www.riffstation.com/}} and
 Chordify\footnote{\url{http://chordify.net}} use \acro{ACE} in their
-music teaching tools, and at the time of writing, Chordify attracts more
-than 2 million unique visitors every month~\cite{haas2012}.
+music teaching tools, and at the time of writing, Chordify attracts
+more than 2 million unique visitors every month~\cite{haas2012}.
 
 % 2008: 13 teams, 15 algorithms
 % 2009: 10 teams, 18 algorithms
@@ -195,18 +190,23 @@ than 2 million unique visitors every month~\cite{haas2012}.
 
 In order to compare different algorithmic approaches in an impartial
 setting, the Music Information Retrieval Evaluation eXchange
-\acro{(MIREX)} \acro{ACE} task was established as an
-annual event. Since its inception in 2008, between 11 and 18
-algorithms have been submitted each year by between 6 and 13
-teams. Despite the fact that \acro{ACE} algorithms are used outside of
-academic environments, and even though the number of \acro{MIREX}
-participants has decreased slightly over the last three years, the problem
-of automatic chord estimation is nowhere near solved. On fresh
-validation data, the best-performing algorithms in 2013 estimated
-chords correctly only 75 percent of the time, and that only when the
-range of possible chords was restricted exclusively to the 25 major,
-minor and ``no-chord'' labels; the performance figure drops to 60 percent when the
-evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-results}).
+\acro{(MIREX)} introducted an annual \acro{ACE} task in 2008. Since
+then, between 11 and 18 algorithms have been submitted each year by
+between 6 and 13 teams. Despite the fact that \acro{ACE} algorithms
+are used outside of academic environments, and even though the number
+of \acro{MIREX} participants has decreased slightly over the last
+three years, the problem of automatic chord estimation is nowhere near
+solved. Automatically extracted chord sequences have classically been
+evaluated by calculating the \emph{chord symbol recall} \acro{(CSR)},
+which reflects the proportion of correctly labelled chords in a single
+song, and a \emph{weighted chord symbol recall} \acro{(WCSR)}, which
+weights the average \acro{CSR} of a set of songs by their length. On
+fresh validation data, the best-performing algorithms in 2013 achieved
+\acro{WCSR} of only 75 percent, and that only when the range of
+possible chords was restricted exclusively to the 25 major, minor and
+``no-chord'' labels; the figure drops to 60 percent when the
+evaluation is extended to include seventh chords (see
+Table~\ref{tab:mirex-results}).
 
 \begin{table*}
   \small
@@ -248,22 +248,18 @@ evaluation is extended to include seventh chords (see Table~\ref{tab:mirex-resul
 
 \acro{MIREX} is a terrific platform for evaluating the performance of
 \acro{ACE} algorithms, but by 2010 it was already being recognised
-that the evaluation rubrics\Johan{Now there's an English word I've never heard before, maybe you could simplify this for me and other non-native speakers, Ashley} could be improved. At that time, the
-quality of automatically extracted chord sequences was evaluated by
-calculating the \emph{chord symbol recall} \acro{(CSR)}, which
-reflected the proportion of correctly labelled chords, and a
-\emph{weighted chord symbol recall} \acro{(WCSR)}, which weighted the
-grand average by the length of a song, using a vocabulary of 12 major
-chords, 12 minor chords and a ``no-chord'' label. 
-At \acro{ISMIR} 2010, a group of ten researchers met
-to discuss their dissatisfaction with the \acro{ACE} evaluation
-measures. In the resulting \enquote{Utrecht Agreement}, it was
-proposed that future evaluations should include more diverse chord
-vocabularies, such as seventh chords and inversions, as the 25-chord
-vocabulary was considered a rather coarse representation of tonal
+that the metrics could be improved. At that time, they included only
+\acro{CSR} and \acro{WCSR} using a vocabulary of 12 major chords, 12
+minor chords and a ``no-chord'' label.  At \acro{ISMIR} 2010, a group
+of ten researchers met to discuss their dissatisfaction. In the
+resulting \enquote{Utrecht Agreement}, it was proposed that future
+evaluations should include more diverse chord vocabularies, such as
+seventh chords and inversions, as the 25-chord vocabulary was
+considered a rather coarse representation of tonal
 harmony.\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
 Furthermore, the group agreed that it was important to include a
-measure of segmentation quality.
+measure of segmentation quality in addition to \acro{CSR} and
+\acro{WCSR}.
 
 At approximately the same time, Christopher Harte proposed a
 formalisation of measures that implemented the aspirations indicated
