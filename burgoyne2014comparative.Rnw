@@ -936,9 +936,10 @@ finds difficult are relatively easy for the other algorithm.
 
 <<outliers, dependson="read-results">>=
 ## Chauvenet's criterion for this sample size.
-chauvenet <- qnorm(1/(2*dim(billboard.2013)[1]), lower.tail=FALSE)
+chauvenet <- qnorm(1/(4*dim(billboard.2013)[1]), lower.tail=FALSE)
 friedman.outliers <- with(billboard.2013, {
-  friedman.fit <- glm(performance.rank ~ song + algorithm * analysis)
+  friedman.fit <- glm(formula = performance.rank ~ song + algorithm * analysis,
+                      weights = duration)
   billboard.2013[abs(resid(friedman.fit)) > chauvenet * sd(resid(friedman.fit)),]
 })
 logistic.outliers <- with(billboard.2013, {
@@ -950,80 +951,82 @@ logistic.outliers <- with(billboard.2013, {
 })
 @ 
 
-To check for outliers, we considered all evaluations on the
-\emph{Billboard} 2013 test set. Chauvenet's criterion for outliers in
-a sample of this size is to lie more than \Sexpr{round(chauvenet, 2)}
-standard deviations from the mean. 
-\Bas{A reference would be nice here.}
-No data point met this criterion
-under Friedman's \acro{ANOVA}. 
-\Bas{This is what you would expect, right? After all, outliers 
-are removed by the ranking process.}
-The most extreme residuals occur for
-algorithm \acro{SB8}, on songs that were so difficult for most
-algorithms that the essentially random approach of \acro{SB8}, due to
-its software bug, did better. Under the logistic regression model,
-Chauvenet's criterion identified \Sexpr{dim(logistic.outliers)[1]}
-extreme data points. These were primarily for songs that are tuned a
-quarter-tone off from standard tuning (A4 = 440\,Hz). The ground truth
-necessarily is \enquote{rounded off} to standard tuning in one
-direction or the other, but in cases where an otherwise
-high-performing algorithm happened to round off in the opposite
-direction, the performance is markedly low.
+To identify outliers, we considered all evaluations on the
+\emph{Billboard} 2013 test set and examined the distribution of
+residuals. Chauvenet's criterion for outliers in a sample of this size
+is to lie more than \Sexpr{round(chauvenet, 2)} standard deviations
+from the mean \cite[\S\,6.2]{Taylor-1997}. Under Friedman's
+\acro{ANOVA}, Chauvenet's criterion identified
+\Sexpr{dim(friedman.outliers)[1]} extreme data points. These are all
+for algorithm \acro{SB8}, a submission with a programming bug that
+erroneously returned alternating C- and B-major chords regardless of
+the song, on songs that were so difficult for most other algorithms
+that the essentially random approach of the bug did better. Under the
+logistic regression model, the criterion identified
+\Sexpr{dim(logistic.outliers)[1]} extreme points. Here, the unexpected
+behaviour was primarily for songs that are tuned a quarter-tone off
+from standard tuning (A4 = 440\,Hz). The ground truth necessarily is
+\enquote{rounded off} to standard tuning in one direction or the
+other, but in cases where an otherwise high-performing algorithm
+happened to round off in the opposite direction, the performance is
+markedly low.
 
 \section{Discussion}
 
-We were surprised to find that strictly in terms of distinguishing
-between algorithms, Friedman's \acro{ANOVA} was in fact more powerful
-than logistic regression, detecting a few extra significant pairs. A
-look at the boxplots in Figure~\ref{fig:cld-plots2}, however, causes
-one to question the scientific utility of that power. \acro{SB8}
-excepted, which was a buggy submission that erroneously returned
-alternating C- and B-major chords regardless of the song, all of the
-algorithms performed fairly similarly in absolute terms. Although
-further testing might be warranted, it seems that the ranking step may
--- for this task -- exaggerate slight differences in performance that would
-be inconsequential for most applications. Furthermore, having now
-benefited from years of study, \acro{WCSR} is a reasonably intuitive and
-well-motivated measure of \acro{ACE} performance, and it is awkward to
-have to work on the Friedman's rank scale instead, especially since it
-ultimately ranks the algorithms' overall performance in a slightly
-different order than the headline \acro{WCSR}-based results.\Johan{Why is this?}
+We were surprised to find that in terms of distinguishing between
+algorithms, Friedman's \acro{ANOVA} was in fact more powerful than
+logistic regression, detecting a few extra significant
+pairs. Nonetheless, the two approaches yield substantially equivalent
+broad conclusions: that a group of top performers -- \acro{CB3},
+\acro{CB4}, \acro{KO2}, \acro{NMSD1}, and \acro{NMSD2} -- are
+statistically indistinguishable from each other, with \acro{KO1} also
+indistinguishable from the lower end of this group. Moreover, having
+now benefited from years of study, \acro{WCSR} is a reasonably
+intuitive and well-motivated measure of \acro{ACE} performance, and it
+is awkward to have to work on the Friedman's rank scale instead,
+especially since it ultimately ranks the algorithms' overall
+performance in a slightly different order than the headline
+\acro{WCSR}-based results.
 
-Friedman's \acro{ANOVA} did exhibit substantially less power for our
-question about interactions between algorithms and differing chord
+Friedman's \acro{ANOVA} did exhibit less power for our question about
+interactions between algorithms and differing chord
 vocabularies. Again, \acro{WCSR} as a unit and as a concept is highly
-meaningful for chord estimation, and there is a real conceptual loss
-from rank transformation on these types of questions. Given the rank
-transformation, Friedman's \acro{ANOVA} can only be sensitive to
-reconfigurations of relative performance as the vocabularies become
-more difficult; logistic regression can also be sensitive to different
-effect sizes across algorithms even when their relative ordering
-remains the same.
+meaningful for chord estimation, and there is a conceptual loss from
+rank transformation. Given the rank transformation, Friedman's
+\acro{ANOVA} can only be sensitive to reconfigurations of relative
+performance as the vocabularies become more difficult; logistic
+regression can also be sensitive to different effect sizes across
+algorithms even when their relative ordering remains the same.
 
 It was encouraging to see that under either statistical model, there
 was a benefit to evaluating with multiple vocabularies. That
-encouraged us to dig deeper into an actual correlation matrix of
-residuals, only available from logistic regression in this
-case. Figure~\ref{fig:hclust-plot} summarises the original correlation
-matrix in Table~\ref{tab:cor} more visually by using the correlations
-as the basis of a hierarchical clustering. Two clear groups emerge,
-both from the clustering and from minding negative correlations in the
-original matrix: one relatively low-performing group including
-\acro{KO1}, \acro{PP3}, \acro{NG1}, and \acro{SB8}, and one relatively
-high-performing group including all others but for perhaps \acro{PP4},
-which does not seem to correlate strongly with any other
-algorithm. Table~\ref{tab:mirex-results} uncovers the secret behind
-the low performance: \acro{KO1} excepted, none of the low-performing
-algorithms attempt to recognise seventh chords, which comprise 29~percent
-of all chords under Vocabulary V. Furthermore, we performed an additional evaluation of seventh chords only, in the style of~\cite{Pauwels-Peeters-2013} and using their software available online\footnote{\url{https://github.com/jpauwels/MusOOEvaluator}}. From the resulting low score of \acro{KO1}, we can deduce that this algorithm is able to
-recognise seventh chords in theory, but that it was mostly likely trained on
-the relatively seventh-poor Isophonics corpus (only 15 percent of all
-chords). On the other hand, \acro{KO2} is the same algorithm trained locally on an
-independent tranche of the \emph{Billboard} corpus, and with that
-training, it becomes a top performer. 
+encouraged us to examine the inter-correlations for the performance of
+the algorithms. Figure~\ref{fig:hclust-plot} summarises the original
+correlation matrix in Table~\ref{tab:cor} more visually by using the
+correlations from logistic regression as the basis of a hierarchical
+clustering. Two clear groups emerge, both from the clustering and from
+minding negative correlations in the original matrix: one relatively
+low-performing group including \acro{KO1}, \acro{PP3}, \acro{NG1}, and
+\acro{SB8}, and one relatively high-performing group including all
+others but for perhaps \acro{PP4}, which does not seem to correlate
+strongly with any other algorithm. The shape of the equivalent tree
+based on Spearman's correlations is similar but for joining \acro{PP4}
+with \acro{SB8} instead of the high-performing
+group. Table~\ref{tab:mirex-results} uncovers the secret behind the
+low performers: \acro{KO1} excepted, none of the low-performing
+algorithms attempt to recognise seventh chords, which comprise
+29~percent of all chords under Vocabulary V. Furthermore, we performed
+an additional evaluation of seventh chords only, in the style
+of~\cite{Pauwels-Peeters-2013} and using their software available
+online.\footnote{\url{https://github.com/jpauwels/MusOOEvaluator}}
+From the resulting low score of \acro{KO1}, we can deduce that this
+algorithm is able to recognise seventh chords in theory, but that it
+was most likely trained on the relatively seventh-poor Isophonics
+corpus (only 15 percent of all chords). \acro{KO2} is the same
+algorithm trained directly on the \acro{MIREX} \emph{Billboard}
+training corpus, and with that training, it becomes a top performer.
 
-<<hclust-plot, dependson="correlations", fig.width=7, fig.height=3.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
+<<hclust-plot, dependson="correlations", fig.width=7, fig.height=3.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance as derived from the estimated correlation matrix under logistic regression, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
 par(mar=par("mar")-c(4,0,2,0))
 plot(hclust(as.dist((1 - logistic.cor)/2), method="complete"),
             main="", sub="",
@@ -1031,29 +1034,35 @@ plot(hclust(as.dist((1 - logistic.cor)/2), method="complete"),
 @ 
 
 Our analysis of outliers again showed Friedman's \acro{ANOVA} to be
-somewhat underpowered relative to logistic regression. It highlighted
-the practical consequences of the well-known problem of atypically-tuned commercial recordings. Although we would not propose deleting
-outliers, it is sobering to know that tuning problems may be having an
-outsized effect on our headline evaluation figures. It might be worth
-considering allowing algorithms their best score in keys up to a
-semitone above or below the ground truth.
+less powerful than logistic regression, as one would expect given the
+range restrictions on rank transformation. But here also the more
+important advantage of logistic regression is the ability to work on
+the \acro{WCSR} scale. Outliers under the logistic regression model
+are also points that have an unusually strong effect on the reported
+results. In our analysis, they highlight the practical consequences of
+the well-known problem of atypically-tuned commercial
+recordings. Although we would not propose deleting outliers, it is
+sobering to know that tuning problems may be having an outsized effect
+on our headline evaluation figures. It might be worth considering
+allowing algorithms their best score in keys up to a semitone above or
+below the ground truth.
 
 Overall, we have shown that as \acro{ACE} becomes more established and
-its evaluation becomes more thorough, it is useful to use a subtler
+its evaluation more thorough, it is useful to use a subtler
 statistical model for comparative analysis. We recommend that future
 \acro{MIREX} \acro{ACE} evaluations use logistic regression in
 preference to Friedman's \acro{ANOVA}. It preserves the natural units
-and scales of \acro{WCSR} and segementation analysis, is more
-powerful for many (although not all) statistical tests, and crucially,
-it allows for a more detailed correlational analysis of which
-algorithms tend have problems with the same songs as others and which
-have perhaps genuinely broken innovative ground. This is by no means
-to suggest that Friedman's test is a bad test in general -- its
+and scales of \acro{WCSR} and segementation analysis, is more powerful
+for many (although not all) statistical tests, and when augmented with
+\acro{GEE}s, it allows for a detailed correlational analysis of which
+algorithms tend to have problems with the same songs as others and
+which have perhaps genuinely broken innovative ground. This is by no
+means to suggest that Friedman's test is a bad test in general -- its
 near-universal applicability makes it an excellent choice in many
 circumstances, including many other \acro{MIREX} evaluations -- but
-for \acro{ACE}, we believe that the extra understanding logistic regression can
-offer may help researchers predict which techniques are most promising
-for breaking the current performance plateau.
+for \acro{ACE}, we believe that the extra understanding logistic
+regression can offer may help researchers predict which techniques are
+most promising for breaking the current performance plateau.
 
 \bibliography{burgoyne2014comparative}
 
