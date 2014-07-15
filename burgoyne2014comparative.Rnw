@@ -92,21 +92,24 @@ Licensed under a Creative Commons Attribution 4.0 International License (\acro{C
 \end{figure}
 }
 
-\threeauthors
-  {John Ashley Burgoyne} {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}
-  {Bas de Haas} {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}
-  {Johan Pauwels} {STMS IRCAM-CNRS-UPMC \\ {\tt
-      johan.pauwels@gmail.com}\thanks{Johan Pauwels is no longer
-      affiliated with IRCAM. Data and source code for this paper, including
-    that necessary to reproduce all statistics and figures, is
-    available from \protect\url{http://bitbucket.org/jaburgoyne/ismir-2014}.}}
+\threeauthors%
+{John Ashley Burgoyne}%
+{Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}%
+{Bas de Haas}%
+{Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}%
+{Johan Pauwels}%
+{\acro{STMS IRCAM--CNRS--UPMC} \\ {\tt
+    johan.pauwels@gmail.com}\thanks{Johan Pauwels is no longer
+    affiliated with \acro{STMS}. Data and source code to reproduce
+    this paper, including all statistics and figures, are available
+    from \protect\url{http://bitbucket.org/jaburgoyne/ismir-2014}.}}
   
 \begin{document}
 <<global-opts, cache=FALSE, include=FALSE>>=
 library(knitr)  
-library(ggplot2)   # figures
-library(car)       # for contr.Sum()
+library(car)       # contr.Sum() for readable contrasts
 library(geepack)   # geeglm() for GEEs
+library(boot)      # inv.logit() 
 library(aod)       # vcov.geeglm(): needed for Tukey tests
 library(multcomp)  # glht(), cld(), and mcp() for Tukey tests
 
@@ -135,6 +138,14 @@ FormatP <- function(p) {
                                                             digits = 0,
                                                             width  = 3,
                                                             flag   = "0")))
+}
+
+FormatNum <- function(x) {
+  #' Add thin spaces as thousands separators expect for four-digit integers.
+  #'
+  ifelse(abs(x) < 10000 && abs(x - round(x)) < .Machine$double.eps ^ 0.5,
+         prettyNum(x),
+         prettyNum(x, big.mark="\\\\,"))
 }
 @ 
 %
@@ -272,7 +283,7 @@ re-evaluation of all \acro{MIREX} \acro{ACE} submissions from 2010 to
 including the chord sequence segmentation evaluation suggested by
 Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have been adopted
 in the context of the \acro{MIREX} \acro{ACE}
-task.\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}
+task.%\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}
 
 \acro{MIREX} \acro{ace} evaluation has also typically included
 comparative statistics to help determine whether the differences in
@@ -305,15 +316,6 @@ alternatives where the distribution is known, and the rank
 transformation can obscure information inherent to the underlying
 measurement, magnifying trivial differences and neutralising
 significant inter-correlations.
-
-%% \Bas{There is another drawback of the Friedman test, it cannot naturally
-%% handle weighted evauation scores, such as the \arc{WCSR}. 
-%% In the particular case of chord labelling the experimenter would
-%% prefer the \acro{WCSR} over the \acro{CSR}~\cite{Pauwels-Peeters-2013},
-%% but he can only use the \acro{CSR} for statistical anlalysis using the
-%% Friedman test.}
-
-%% \Ashley{It turns out that you actually *can* do a weighted Friedman test, as it turns out. You just have to formulate as an (almost) normal two-way ANOVA with the variables in a particular order (and still with rank transformation, of course). I had no idea. Remind me the next time I see you and I'll show you.}
 
 But there is no need to pay the costs of Friedman's \acro{ANOVA} for
 evaluating chord estimation. Fundamentally, \acro{WCSR} is a
@@ -420,10 +422,7 @@ proportional to $n_i$:
 \begin{equation}
   \label{eq:var}
   \var\left[P \mid N, \vec{X}\right] = 
-  \left(\frac{1}{n}\right)
-  \pi
-  \left[1 - \pi\right]
-  \ .
+  \left(\frac{1}{n}\right) \pi (1 - \pi)\ .
 \end{equation}
 Equation~\ref{eq:var} only holds, however, if the estimates of chord labels
 for each audio frame are independent. For \acro{ACE}, this is
@@ -434,33 +433,25 @@ thereof. Hence one should expect that the variance of \acro{WCSR}
 estimates would be rather larger than the basic logit model would
 suggest. 
 
-This type of problem is extremely common across disciplines,
-so much so that is has been given a name, \emph{over-dispersion}, and
-some authors go so far as to state that \enquote{unless there are good
+This type of problem is extremely common across disciplines, so much
+so that is has been given a name, \emph{over-dispersion}, and some
+authors go so far as to state that \enquote{unless there are good
   external reasons for relying on the binomial assumption [of
   independence], it seems wise to be cautious and to assume that
   over-dispersion is present to some extent unless and until it is
-  shown to be absent} \cite[p.~125]{McCullagh1989}.
-One standard approach to handling over-dispersion is to use a
-so-called \emph{quasi-likelihood}
-\cite[\S\,4.7]{Agresti2007}. In case of logistic regression, this
-typically entails a modification to the assumption on the distribution
-of the $p_i$ that includes an additional \emph{dispersion parameter}
-$\phi$:
-\begin{equation}
-  \label{eq:quasi-E}
-  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
-  \pi(\vec{x}; \vec{\betaup})
-\end{equation}
-as before, but
+  shown to be absent} \cite[p.~125]{McCullagh1989}.  One standard
+approach to handling over-dispersion is to use a so-called
+\emph{quasi-likelihood} \cite[\S\,4.7]{Agresti2007}. In case of
+logistic regression, this typically entails a modification to the
+assumption on the distribution of the $p_i$ that includes an
+additional \emph{dispersion parameter} $\phi$. The expected values are
+the same as a standard binomial model, but
 \begin{equation}
   \label{eq:quasi-var}
   \var\left[P \mid N, \vec{X}\right] = 
-  \left(\frac{\phi}{n}\right)
-  \pi 
-  \left[1 - \pi\right]
-  \ .
+  \left(\frac{\phi}{n}\right) \pi (1 - \pi)\ .
 \end{equation}
+
 These models are known as quasi-likelihood models because one loses a
 closed-form solution for the actual probability distribution $f_{P
   \mid N, \vec{X}}$; one knows only that the $p_i$ behave something
@@ -476,27 +467,31 @@ matches the empirical variance in the data, and because of the form of
 Equation~\ref{eq:quasi-var}, it renders any scaling considerations for
 the $n_i$ moot.
 
-\subsection{Generalised Estimating Equations (GEEs)}
+Other approaches to handling over-dispersion include
+\emph{beta-binomial models} \cite[\S\,13.3]{Agresti2007} and
+\emph{beta regression} \cite{Ferrari-Cribari-Neto-2004}, but we prefer
+the simplicity of the quasi-likelihood model.
+
+\subsection{Generalised Estimating Equations (\acro{GEE}s)}\label{subsec:GEEs}
 
 The quasi-binomial model achieves most of what one would be looking
 for when evaluating \acro{ACE} for \acro{MIREX}: it handles
 proportions naturally, is consistent with the weighted averaging used
-to compute \acro{WCSR}, adjusts for over-dispersion in a way that also
-eliminates any worries about scaling, and above all, it seems to fit
-the data well. Nonetheless, the quasi-binomial model is slightly
+to compute \acro{WCSR}, and adjusts for over-dispersion in a way that
+also eliminates any worries about scaling. Nonetheless, it is slightly
 over-conservative for evaluating \acro{ACE}. As discussed earlier,
 quasi-binomial models are necessary to account for over-dispersion,
 and one important source of over-dispersion in these data is the lack
 of independence of chord estimates from most algorithms within the
-same song. \acro{MIREX} exhibits another important violation of the independence
-assumption, however: all algorithms are tested on the same sets of
-songs, and some songs are clearly more difficult than others; put
-differently, one does not expect the algorithms to perform completely
-independently of one another on the same song but rather expects a
-certain correlation in performance across the set of songs. By taking
-that correlation into account, one can improve the precision of
-estimates, particularly the precision of pair-wise comparisons
-\cite[\S\,10.1]{Agresti2007}.
+same song. \acro{MIREX} exhibits another important violation of the
+independence assumption, however: all algorithms are tested on the
+same sets of songs, and some songs are clearly more difficult than
+others. Put differently, one does not expect the algorithms to perform
+completely independently of one another on the same song but rather
+expects a certain correlation in performance across the set of
+songs. By taking that correlation into account, one can improve the
+precision of estimates, particularly the precision of pair-wise
+comparisons \cite[\S\,10.1]{Agresti2007}.
 
 <<read-results>>=
 ReadResults <- function (analysis) {
@@ -585,49 +580,58 @@ ReadAllResults <- function (data.set) {
         bass[analysis == "Segmentation"] <- NA
         ## Order the algorithm factor for easier comparisons.
         algorithm <- factor(algorithm, levels=ALGOS)
-        ## Set the contrasts such that they represent differences 
-        ## from the grand average.
-        contrasts(song) <- contr.Sum(levels(song))
-        contrasts(algorithm) <- contr.Sum(levels(algorithm))
-      })
+     })
   setwd("..")
   return(results[order(results$song),]) # group sorting for geeglm()
 }
 
+# Read subsets for this paper and set contrasts.
 billboard.2013 <- ReadAllResults("BillboardTest2013")
+contrasts(billboard.2013$algorithm) <- contr.Sum(ALGOS)
+billboard.2013.7b <-
+  droplevels(billboard.2013[billboard.2013$analysis == "SeventhsBass",])
+contrasts(billboard.2013.7b$algorithm) <- contr.Sum(ALGOS)
 @ 
 
 <<cld-summaries, dependson="read-results">>=
-friedman.summary <-
-  with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
-       summary(glht(aov(performance.rank ~ song + algorithm),
-                    mcp(algorithm = "Tukey")),
-               test = adjusted("fdr")))
-logistic.summary <-
-  with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
-       summary(glht(geeglm(formula = performance ~ algorithm,
-                           family  = binomial(link="logit"),
-                           corstr  = "exchangeable",
-                           weights = duration,
-                           id      = song),
-                    mcp(algorithm = "Tukey")),
-               test = adjusted("fdr")))
+friedman.summary <- with(billboard.2013.7b,
+  summary(glht(glm(formula   = performance.rank ~ song + algorithm,
+                   weights   = duration),
+               mcp(algorithm = "Tukey")),
+          test = adjusted("fdr")))
+logistic.summary <- with(billboard.2013.7b,
+  summary(glht(geeglm(formula   = performance ~ algorithm,
+                      family    = binomial(link = "logit"),
+                      corstr    = "exchangeable",
+                      weights   = duration,
+                      id        = song),
+               mcp(algorithm = "Tukey")),
+          test = adjusted("fdr")))
 @ 
 
 <<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, include=FALSE>>=
 ## Compact letter displays require an extra top margin.
 par(mar = par("mar") + c(0, 0, 5, 0))
-## Trick plot.cld into using the response for the Friedman ANOVA.
 friedman.cld <- cld(friedman.summary, level=.005)
-friedman.cld$covar <- FALSE
+friedman.cld$covar <- FALSE # Tricks plot.cld into using the response scale.
 plot(friedman.cld,
      xlab = "Algorithm",
      ylab = "Rank per Song (1 low; 12 high)",
      las  = 2)
+points(1:12,
+       coef(friedman.summary$model)[1] +
+       friedman.summary$model$contrasts$algorithm %*%
+       coef(friedman.summary$model)[162:172],
+       pch = 16)
 plot(cld(logistic.summary, level=.005),
      xlab = "Algorithm",
      ylab = "Chord-Symbol Recall (CSR)",
      las  = 2)
+points(1:12,
+       inv.logit(coef(logistic.summary$model)[1] +
+                 logistic.summary$model$contrasts$algorithm %*%
+                 coef(logistic.summary$model)[2:12]),
+       pch = 16)
 @ 
 
 \begin{figure*}
@@ -639,30 +643,34 @@ plot(cld(logistic.summary, level=.005),
   \subfloat[Logistic Regression\label{fig:cld-plots2}]{
     \centering \includegraphics[width=0.45\maxwidth]{figure/cld-plots2} 
   }
-  \caption{
-  \Bas{Is it WCSR or CSR that is displayed here? (the caption on 
-  the y-axis states CSR)}
-  Boxplots and compact letter displays for the \acro{MIREX} \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with vocabulary V (seventh chords and inversions). $N =$ 161 songs per algorithm. Given the respective statistical models, there are insufficient data to distinguish among algorithms sharing a letter, correcting for multiple comparisons to hold the \acro{FDR} at $\alpha =$ .005. Although Friedman's \acro{ANOVA} detects slightly more significant pairwise differences than logistic regression (\Sexpr{sum(friedman.summary$test$pvalues < .005)} vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it operates on a different scale than \acro{CSR} and misorders algorithms relative to \acro{WCSR}.
-\Bas{I compared the Friedman test results with the Matlab script that has 
-been used in MIREX for ages and that I've adapted to MIREX ACE 2013. 
-This Friedman analysis gives slightly different result. I guess this 
-is because CSR is taken into account instead of WCSR? In ``the Matlab 
-Friedman'' only 41 significant differences can be discerned.}  
-  }
+  \caption{Boxplots and compact letter displays for the \acro{MIREX}
+    \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with
+    vocabulary V (seventh chords and inversions). Bold lines represent
+    medians and filled dots (weighted) means. $N =$
+    \Sexpr{length(levels(billboard.2013[['song']]))} songs per
+    algorithm. Given the respective statistical models, there are
+    insufficient data to distinguish among algorithms sharing a
+    letter, correcting to hold the \acro{FDR} at $\alpha =$
+    .005. Although Friedman's \acro{ANOVA} detects slightly more
+    significant pairwise differences than logistic regression
+    (\Sexpr{sum(friedman.summary$test$pvalues < .005)}
+    vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it
+    operates on a different scale than \acro{CSR} and misorders
+    algorithms relative to \acro{WCSR}.}
   \label{fig:cld-plots}  
 \end{figure*}
 
 A relatively straightforward variant of quasi-likelihood known as
-\emph{generalised estimating equations} (\acro{GEE}s) incorporates this type
-of correlation \cite[ch.~11]{Agresti2007}. With the \acro{GEE} approach, rather than
-predicting each $p_i$ individually, one predicts complete vectors of
-proportions $\vec{p}_i$ for each relevant group, much as Friedman's
-test seeks to estimate ranks within each group. For \acro{ACE},
-the groups are songs, and thus one considers the
-observations to be vectors $\vec{p}_i$, one for each song, where
-$p_{ij}$ represents the \acro{CSR}\Johan{in the end, isn't it always WCSR that is used now that it is clear that the weighting can be handled?} or segmentation score for algorithm $j$
-on song $i$. Analogous to the case of ordinary quasi-binomial or
-logistic regression,
+\emph{generalised estimating equations} (\acro{GEE}s) incorporates
+this type of correlation \cite[ch.~11]{Agresti2007}. With the
+\acro{GEE} approach, rather than predicting each $p_i$ individually,
+one predicts complete vectors of proportions $\vec{p}_i$ for each
+relevant group, much as Friedman's test seeks to estimate ranks within
+each group. For \acro{ACE}, the groups are songs, and thus one
+considers the observations to be vectors $\vec{p}_i$, one for each
+song, where $p_{ij}$ represents the \acro{CSR} or segmentation score
+for algorithm $j$ on song $i$. Analogous to the case of ordinary
+quasi-binomial or logistic regression,
 \begin{equation}
   \label{eq:gee-E}
   \mathbf{E}\left[P_j \mid N, \vec{X}_j\right] =
@@ -672,12 +680,9 @@ Likewise, analogous to the quasi-binomial variance,
 \begin{equation}
   \label{eq:gee-var}
   \var\left[P_j \mid N, \vec{X}_j\right] =
-  \left(\frac{\phi}{n}\right)
-  \pi
-  \left[1 - \pi\right]
-  \ .
+  \left(\frac{\phi}{n}\right) \pi_j (1 - \pi_j)\ .
 \end{equation}
-\Bas{There is one `)' to many in Equation~\ref{eq:gee-var}.}%
+
 Because the \acro{GEE} approach is concerned with vector-valued estimates
 rather than point estimates, it also involves estimating a full
 variance-covariance matrix. In addition to $\vec{\betaup}$ and $\phi$,
@@ -687,17 +692,17 @@ $P_j$ in the form of a function $R(\vec{\alphaup})$ that yields a
 correlation matrix. (One might, for example, assume that that the
 $P_j$ are \emph{exchangeable}, i.e., that every pair shares a common
 correlation coefficient.) Then if $B$ is a diagonal matrix such that
-$B_{jj} = \var\left[P_j \mid N, \vec{X}_j\right]$,
+$B_{jj} = \var\,[P_j \mid N, \vec{X}_j]$,
 \begin{equation}
   \label{eq:gee-cov}
-  \cov\left[P \mid N, \vec{X}\right] =
+  \cov\left[\vec{P} \mid N, \vec{X}\right] =
   B^{\sfrac{1}{2}} R(\vec{\alphaup}) B^{\sfrac{1}{2}}\ .
 \end{equation}
 If all of the $P_j$ are uncorrelated with each other, then this
 formula reduces to the basic quasi-binomial model, which assumes a
 diagonal covariance matrix. The final step of \acro{GEE} estimation
 adjusts Equation~\ref{eq:gee-cov} according to the actual correlations
-observed in the data, and as such, \acro{GEE} is quite robust in
+observed in the data, and as such, \acro{GEE}s are quite robust in
 practice even when the \emph{a priori} assumptions about the
 correlation structure are incorrect \cite[\S\,11.4.2]{Agresti2007}.
 
@@ -710,15 +715,17 @@ and three segmentation measures) on each of three different data sets
 Zweieck \cite{mauch2010} and two versions of the McGill
 \emph{Billboard} set, including music from the American pop charts
 \cite{burgoyne2011}). There is insufficient space to present the
-results of logistic regression on all combinations, and so we
-will focus on a single one of the data sets, the \emph{Billboard} 2013
-test set. In some cases, logistic regression allows us to speak to all
-measures (11\,592 observations), but in general, we will also
-restrict ourselves to discussing the newest and most challenging of
-the harmonic vocabularies for \acro{WCSR}: Vocabulary V, which
-includes major chords, minor chords, major sevenths, minor sevenths,
-dominant sevenths, and the complete set of inversions of all of the
-above (1932 observations). We are interested in four key questions.
+results of logistic regression on all combinations, and so we will
+focus on a single one of the data sets, the \emph{Billboard} 2013 test
+set. In some cases, logistic regression allows us to speak to all
+measures (\Sexpr{FormatNum(dim(billboard.2013)[1])} observations), but
+in general, we will also restrict ourselves to discussing the newest
+and most challenging of the harmonic vocabularies for \acro{WCSR}:
+Vocabulary V (\Sexpr{FormatNum(dim(billboard.2013.7b)[1])}
+observations), which includes major chords, minor chords, major
+sevenths, minor sevenths, dominant sevenths, and the complete set of
+inversions of all of the above. We are interested in four key
+questions.
 \begin{enumerate}
 \item How do pairwise comparisons under logistic regression compare to
   pairwise comparisons with Friedman's \acro{ANOVA}?  Is logistic
@@ -730,7 +737,7 @@ above (1932 observations). We are interested in four key questions.
 \item Are all \acro{ACE} algorithms making similar mistakes, or do
   they vary in their strengths and weaknesses?
 \item Which algorithm-song pairs exhibited unexpectedly good or
-  unexpectedly bad performance, and is there anything to be learned
+  bad performance, and is there anything to be learned
   from these observations?
 \end{enumerate}
 
@@ -739,35 +746,92 @@ above (1932 observations). We are interested in four key questions.
 
 \subsection{Pairwise Comparisons}
 
-The boxplots in Figure~\ref{fig:cld-plots} give a broader view of the
-performance of each algorithm than the overall performance measures
-from Table~\ref{tab:mirex-results}, and above the boxplots, all
-significant pairwise differences are recorded as a \emph{compact
-  letter display}. The figure is restricted to Vocabulary V, with the
-algorithms in descending order by
+The boxplots in Figure~\ref{fig:cld-plots} give a more detailed view
+of the performance of each algorithm than
+Table~\ref{tab:mirex-results}. The figure is restricted to Vocabulary
+V, with the algorithms in descending order by
 \acro{WCSR}. Figure~\ref{fig:cld-plots1} comes from the traditional
 Friedman's \acro{ANOVA}, and thus its $y$-axis reflects not \acro{CSR}
 directly but the per-song ranks with respect to
 \acro{CSR}. Figure~\ref{fig:cld-plots2} comes from quasi-binomial
 regression estimated with \acro{GEE}s, as described in
 Section~\ref{sec:logistic-regression}. Its $y$-axis reflects per-song
-\acro{CSR}\Johan{same remark about WCSR vs CSR} directly. In the interest of reproducible research, we used
-a stricter $\alpha =$ .005 threshold for reporting pairwise
-comparisons with the more contemporary false-discovery-rate
-\acro{(FDR)} approach of Benjamini and Hochberg as opposed to more
-traditional Tukey tests at $\alpha =$ .05
-\cite{Benjamini-Hochberg-1995,Johnson-2013}. Within either of the
-subfigures, the difference in \acro{WCSR} between two algorithms that
+\acro{CSR} directly. Above the boxplots, all significant pairwise
+differences are recorded as a \emph{compact letter display}. In the
+interest of reproducible research, we used a stricter $\alpha =$ .005
+threshold for reporting pairwise comparisons with the more
+contemporary false-discovery-rate \acro{(FDR)} approach of Benjamini
+and Hochberg as opposed to more traditional Tukey tests at $\alpha =$
+.05 \cite{Benjamini-Hochberg-1995,Johnson-2013}. Within either of the
+subfigures, the difference in performance between two algorithms that
 share any letter in the compact letter display is \emph{not}
 statistically significant. Overall, Friedman's \acro{ANOVA} found
 \Sexpr{sum(friedman.summary$test$pvalues < .005) -
   sum(logistic.summary$test$pvalues < .005)} more significant pairwise
 differences than logistic regression.
 
+<<correlations, dependson="read-results">>=
+PCorr <- function(m, n, adjust = NULL) {
+  #' Replaces upper triangle of a correlation matrix with p-values, corrected for
+  #' multiple comparisons.
+  #'
+  #' @param m the correlation matrix
+  #' @param n the number of pairs for each entry in the matrix
+  #' @param adjust the adjustment method for multiple comparisons with p.adjust
+  #'
+  upper <- row(m) < col(m)
+  m[upper] <- m[upper] * sqrt((n - 2) / (1 - m[upper] ^ 2))
+  m[upper] <- pt(abs(m[upper]), n - 2, lower.tail = FALSE) * 2
+  m[upper] <- p.adjust(m[upper], adjust)
+  m
+}
+
+WCorr <- function (a, b = a, w = rep(1, nrow(a))/nrow(a)) 
+  #' Pearson's correlation matrix with weighted pairs. Adapted from
+  #' http://stackoverflow.com/questions/9460664/weighted-pearsons-correlation.
+  #'
+  #' See also: corr() in the boot package
+  #'
+{
+  ## Convert to matrices.
+  if (is.data.frame(a)) a <- as.matrix(b)
+  if (is.data.frame(b)) b <- as.matrix(b)
+
+  ## Normalize weights.
+  w <- w / sum(w)
+
+  ## Centre matrices.
+  a <- sweep(a, 2, colSums(a * w))
+  b <- sweep(b, 2, colSums(b * w))
+
+  ## Compute weighted correlation.
+  t(w*a) %*% b / sqrt( colSums(w * a**2) %*% t(colSums(w * b**2)) )
+}
+
+logistic.cor <- with(billboard.2013.7b, {
+  .contrasts. <- logistic.summary$model$contrasts$algorithm
+  .vcov. <- vcov(logistic.summary$model)
+  cov2cor(.contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.))
+})
+logistic.cor <- PCorr(logistic.cor, nlevels(billboard.2013.7b$song), "fdr")
+
+friedman.cor <- with(billboard.2013.7b, {
+  .ranks. <- reshape(data      = data.frame(song, algorithm, performance.rank, duration),
+                     idvar     = c("song"),
+                     timevar   = c("algorithm"),
+                     direction = "wide")
+  rownames(.ranks.) <- .ranks.[, 1]
+  .ranks. <- .ranks.[, c(seq(2, 24, 2), 25)]
+  colnames(.ranks.) <- c(ALGOS, "duration")
+  WCorr(.ranks.[, 1:12], w = .ranks.[, 13])
+})
+friedman.cor <- PCorr(friedman.cor, nlevels(billboard.2013.7b$song), "fdr")
+@ 
 
 \begin{table*}
   \small
-  \centering  \begin{tabular}{clcD{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}}
+  \centering  
+  \begin{tabular}{clcD{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}D{.}{.}{1.2}}
     \toprule 
     \multicolumn{3}{c}{Algorithm} &
     \colhead{\acro{KO2}} & \colhead{\acro{NMSD2}} &
@@ -775,38 +839,53 @@ differences than logistic regression.
     \colhead{\acro{CB3}} & \colhead{\acro{KO1}} &
     \colhead{\acro{PP4}} & \colhead{\acro{PP3}} &
     \colhead{\acro{CF2}} & \colhead{\acro{NG1}} &
-    \colhead{\acro{NG2}} \\
+    \colhead{\acro{NG2}} & \colhead{\acro{SB8}}\\
     \midrule
-    & \acro{NMSD2} &&     .25^\ast\\
-    & \acro{CB4}   &&     .41^\ast &  .39^\ast\\
-    & \acro{NMSD1} &&     .30^\ast &  .60^\ast &  .53^\ast\\
-    & \acro{CB3} &&       .34^\ast &  .10      &  .76^\ast &  .42^\ast\\
-    & \acro{KO1} &&      -.04      & -.42^\ast & -.51^\ast & -.51^\ast & -.29^\ast\\
-    & \acro{PP4} &&      -.22      &  .08      & -.16      &  .06      & -.07      & -.05\\
-    & \acro{PP3} &&      -.49^\ast & -.46^\ast & -.61^\ast & -.53^\ast & -.37^\ast &  .68^\ast &  .22\\
-    & \acro{CF2} &&       .09      &  .19      &  .24^\ast &  .42^\ast &  .17      & -.49^\ast &  .06      & -.51^\ast\\
-    & \acro{NG1} &&      -.54^\ast & -.42^\ast & -.60^\ast & -.56^\ast & -.41^\ast &  .68^\ast &  .04      &  .85^\ast & -.47^\ast\\
-    & \acro{NG2} &&       .09      &  .17      &  .17      &  .16      & -.03      & -.50^\ast & -.09      & -.54^\ast &  .50^\ast & -.40^\ast\\
-    & \acro{SB8} &&      -.32^\ast & -.44^\ast & -.44^\ast & -.52^\ast & -.46^\ast &  .00      & -.32^\ast &  .08      & -.33^\ast &  .08      & -.16\\
+    & \acro{KO2} &&   \multicolumn{1}{c}{--}&
+                                   .07      &  .11      & -.05      &  .10      &  .03      & -.41^\ast & -.44^\ast & -.03      & -.35^\ast &  .05      & -.01\\
+    & \acro{NMSD2} &&  .25^\ast & \multicolumn{1}{c}{--}&
+                                              -.01      &  .49^\ast & -.25^\ast & -.20      & -.19      & -.36^\ast &  .00      & -.33^\ast &  .02      & -.06\\
+    & \acro{CB4}   &&  .41^\ast &  .39^\ast & \multicolumn{1}{c}{--}&
+                                                           .12      &  .47^\ast & -.46^\ast & -.30^\ast & -.48^\ast &  .09      & -.38^\ast &  .08      & -.09\\
+    & \acro{NMSD1} &&  .30^\ast &  .60^\ast &  .53^\ast & \multicolumn{1}{c}{--}&
+                                                                      -.17      & -.45^\ast & -.08      & -.45^\ast &  .27^\ast & -.44^\ast &  .17      & -.10\\
+    & \acro{CB3} &&    .34^\ast &  .10      &  .76^\ast &  .42^\ast & \multicolumn{1}{c}{--}&
+                                                                                  -.19      & -.26^\ast & -.14      & -.08      & -.17      & -.16      & -.08\\
+    & \acro{KO1} &&   -.04      & -.42^\ast & -.51^\ast & -.51^\ast & -.29^\ast & \multicolumn{1}{c}{--}&
+                                                                                              -.10      &  .42^\ast & -.41^\ast &  .50^\ast & -.52^\ast &  .05\\
+    & \acro{PP4} &&   -.22      &  .08      & -.16      &  .06      & -.07      & -.05      & \multicolumn{1}{c}{--}&
+                                                                                                           .37^\ast & -.03      &  .00      &  .05      & -.03\\
+    & \acro{PP3} &&   -.49^\ast & -.46^\ast & -.61^\ast & -.53^\ast & -.37^\ast &  .68^\ast &  .22      & \multicolumn{1}{c}{--}&
+                                                                                                                      -.48^\ast &  .66^\ast & -.48^\ast &  .04\\
+    & \acro{CF2} &&    .09      &  .19      &  .24^\ast &  .42^\ast &  .17      & -.49^\ast &  .06      & -.51^\ast & \multicolumn{1}{c}{--}&
+                                                                                                                                  -.48^\ast &  .48^\ast & -.14\\
+    & \acro{NG1} &&   -.54^\ast & -.42^\ast & -.60^\ast & -.56^\ast & -.41^\ast &  .68^\ast &  .04      &  .85^\ast & -.47^\ast & \multicolumn{1}{c}{--}&
+                                                                                                                                              -.40^\ast & -.10\\
+    & \acro{NG2} &&    .09      &  .17      &  .17      &  .16      & -.03      & -.50^\ast & -.09      & -.54^\ast &  .50^\ast & -.40^\ast & \multicolumn{1}{c}{--}&
+                                                                                                                                                          -.11\\
+    & \acro{SB8} &&   -.32^\ast & -.44^\ast & -.44^\ast & -.52^\ast & -.46^\ast &  .00      & -.32^\ast &  .08      & -.33^\ast &  .08      & -.16      & \multicolumn{1}{c}{--}\\
     \bottomrule
   \end{tabular}
-  \caption{Pearson's correlation matrix on the coefficients of the
-    logistic regression fit \acro{(WCSR)} for the \emph{Billboard}
-    2013 test set with vocabulary V. $N =$ 161 songs per cell. Starred
+  \caption{Pearson's correlations on the coefficients from
+    logistic regression \acro{(WCSR)} for the \emph{Billboard}
+    2013 test set with vocabulary V (lower triangle); Spearman's
+    correlations for the same data (upper triangle). $N =$ 161 songs per cell. Starred
     correlations are significant at $\alpha =$ .005, controlling for
-    the \acro{FDR}. A set of algorithms stands out for
-    being negatively correlated with the top performers (viz.,
-    \acro{KO1}, \acro{PP3}, \acro{NG1}, and \acro{SB8}); in general,
-    algorithms in this set did not attempt to recognise seventh chords.}
+    the \acro{FDR}. A set of algorithms (viz.,
+    \acro{KO1}, \acro{PP3}, \acro{NG1}, and \acro{SB8}) stands out for
+    negative correlations with the top performers; in general,
+    these algorithms did not attempt to recognise seventh chords.}
   \label{tab:cor}
 \end{table*}
 
-\subsection{Effect of vocabulary}
+\subsection{Effect of Vocabulary}
 
 <<vocabulary, dependson="read-results">>=
 friedman.vocab.anova <-
   with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
-       Anova(aov(performance.rank ~ song + algorithm * vocabulary * bass)))
+       Anova(glm(performance.rank ~ song + algorithm * vocabulary * bass,
+                 weights = duration),
+             test.statistic = "F"))
 logistic.vocab.anova <-
   with(droplevels(billboard.2013[billboard.2013$analysis != "Segmentation",]),
        anova(geeglm(performance ~ algorithm * (vocabulary + bass), 
@@ -823,36 +902,35 @@ logistic.vocab.anova <-
 
 To test the utility of the new evaluation vocabularies, we ran both
 Friedman \acro{ANOVA}s (ranked separately for each vocabulary) and
-logistic regressions and looked for significant interactions between
-algorithm and either inversion (present or absent from the vocabulary)
-or complexity of the vocabulary (root only, major-minor, or
+logistic regressions and looked for significant interactions among
+the algorithm, inversions (present or absent from the vocabulary)
+and the complexity of the vocabulary (root only, major-minor, or
 major-minor with 7ths). Under Friedman's \acro{ANOVA}, there was a
 significant Algorithm $\times$ Complexity interaction,
 $F($\Sexpr{friedman.vocab.anova[5,2]},
-\Sexpr{sum(friedman.vocab.anova[7:9,2])}$) =$
+\Sexpr{sum(friedman.vocab.anova[9,2])}$) =$
 \Sexpr{round(friedman.vocab.anova[5,3], 2)},
-\Sexpr{FormatP(friedman.vocab.anova[5,4])}, but inversion was
-significant neither as a main effect nor as part of any
-interaction.\Johan{wouldn't it be clearer to say "insignificant both as a main effect and as ..."? The significant followed by a negation slightly bothers me :-)} The logistic regression model, in contrast, identified a
-three-way Algorithm $\times$ Complexity $\times$ Inversions
-interaction, $\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$) =$
+\Sexpr{FormatP(friedman.vocab.anova[5,4])}. The logistic regression
+model identified a significant three-way Algorithm $\times$ Complexity
+$\times$ Inversions interaction,
+$\chi^2($\Sexpr{logistic.vocab.anova[1,1]}$) =$
 \Sexpr{round(logistic.vocab.anova[1,2], 2)},
-\Sexpr{FormatP(logistic.vocab.anova[1,3])}.
-
-\Johan{I would mention that only 1 algo supports inversions, now it's only mentioned in the table and not in the text (as far as I can see) and it's pretty relevant there with the algo x complexity interaction.}
+\Sexpr{FormatP(logistic.vocab.anova[1,3])}, but the additional
+interaction with inversions should be interpreted with care: only one
+algorithm (\acro{CF2}) attempts to recognise inversions.
 
 \subsection{Correlation Matrices}
 
-Table~\ref{tab:cor} presents the correlation matrix of the residuals
-after logistic regression on \acro{WCSR} for Vocabulary V. Friedman's
-\acro{ANOVA} has no useful analogue: all its entries are necessarily
-the same. Significant correlations are marked, again using the
-Benjamini--Hochberg procedure to control the \acro{FDR} at $\alpha =$
-.005. Positive correlations do not necessarily imply that the
-algorithms perform similarly; rather it implies that they find the
-same songs relatively easy or difficult. Negative correlations imply
-that songs that one algorithm finds difficult are relatively easy for
-the other algorithm.
+Table~\ref{tab:cor} presents the inter-correlations of \acro{WCSR}
+between algorithms, rank-transformed (Spearman's correlations,
+analogous to Friedman's \acro{ANOVA}) in the upper triangle, and in
+the lower triangle, as estimated from logistic regression with
+\acro{GEE}s. Significant correlations are marked, again controlling
+the \acro{FDR} at $\alpha =$ .005. Positive correlations do not
+necessarily imply that the algorithms perform similarly; rather it
+implies that they find the same songs relatively easy or
+difficult. Negative correlations imply that songs that one algorithm
+finds difficult are relatively easy for the other algorithm.
 
 \subsection{Outliers}
 
@@ -927,7 +1005,7 @@ It was encouraging to see that under either statistical model, there
 was a benefit to evaluating with multiple vocabularies. That
 encouraged us to dig deeper into an actual correlation matrix of
 residuals, only available from logistic regression in this
-case. Figure~\ref{fig:correlations} summarises the original correlation
+case. Figure~\ref{fig:hclust-plot} summarises the original correlation
 matrix in Table~\ref{tab:cor} more visually by using the correlations
 as the basis of a hierarchical clustering. Two clear groups emerge,
 both from the clustering and from minding negative correlations in the
@@ -945,28 +1023,11 @@ chords). On the other hand, \acro{KO2} is the same algorithm trained locally on 
 independent tranche of the \emph{Billboard} corpus, and with that
 training, it becomes a top performer. 
 
-<<correlations, dependson="read-results", fig.width=7, fig.height=4.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
-with(droplevels(billboard.2013[billboard.2013$analysis=="SeventhsBass",]),
-     { ## It may not be necessary to change the contrast type, but it is safer.
-       .contrasts. <- contr.Sum(levels(algorithm))
-       contrasts(algorithm) <- .contrasts.
-       .vcov. <- vcov(geeglm(formula = performance ~ algorithm,
-                             family = binomial(link="logit"),
-                             corstr = "exchangeable",
-                             weights = duration, id = song))
-       logistic.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
-       logistic.cor <- cov2cor(logistic.vcov)
-       logistic.dist <- as.dist((1 - logistic.cor)/2) 
-       ## Confirm that the Friedman variance-covariance matrix is degenerate.
-       .vcov. <- vcov(glm(performance.rank ~ algorithm + song))
-       friedman.vcov <- .contrasts. %*% .vcov.[2:12,2:12] %*% t(.contrasts.)
-       friedman.cor <- cov2cor(friedman.vcov)
-       friedman.dist <- as.dist((1 - friedman.cor)/2)
-       par(mar=par("mar")-c(4,0,0,0))
-       plot(hclust(logistic.dist, method="complete"),
+<<hclust-plot, dependson="correlations", fig.width=7, fig.height=3.5, fig.out="\\linewidth", fig.cap="Hierarchical clustering of algorithms based on \\acro{WCSR} for for the \\emph{Billboard} 2013 test set with vocabulary V, Pearson's distance, and complete linkage. The group of algorithms that is negatively correlated with the top performers appears at the left. \\acro{PP4} stands out as the most idiosyncratic performer.">>=
+par(mar=par("mar")-c(4,0,2,0))
+plot(hclust(as.dist((1 - logistic.cor)/2), method="complete"),
             main="", sub="",
             ylab="Pearson's Distance", xlab="")
-     })
 @ 
 
 Our analysis of outliers again showed Friedman's \acro{ANOVA} to be
