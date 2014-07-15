@@ -241,8 +241,6 @@ Table~\ref{tab:mirex-results}).
     with sevenths and inversions; VI: mean segmentation score; VII:
     under-segmentation; VIII: over-segmentation. Adapted from the
     \acro{MIREX} Wiki.}
-    \Bas{If we really need the space, this table could be fit into 
-    one column}
   \label{tab:mirex-results}
 \end{table*}
 
@@ -276,28 +274,34 @@ Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have been adopted
 in the context of the \acro{MIREX} \acro{ACE}
 task.\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}
 
-It is difficult to discern a story in the spray of numbers in
-Table~\ref{tab:mirex-results}, and thus \acro{MIREX} evaluation has
-also typically included comparative statistics to help determine
-whether the difference in performance between pairs of algorithms is
-statistically significant. Traditionally, Friedman's \acro{ANOVA} has
-been used for this purpose, accompanied by Tukey's Honest Significant
-Difference tests for each pair of algorithms. Friedman's \acro{ANOVA}
-is equivalent to a standard two-way \acro{ANOVA} with the actual
-measurements (in our case \acro{WCSR} or the new segmentation measure)
-\Bas{In this paper we refer to ``the new segmentation measure'' or
-something similar. I think it would be a good idea to give this new
-segmentation measure a proper name. Maybe we can just call it 
-Directional Hamming Distance (\acro{DHD}?)}%
-\Johan{Good point, a quick search learns me that DHD seems to be the already established name and it's not that new in fact. It comes from the image segmentation field and has been first used for music in Abdallah et al. 2005 ISMIR paper. See also \url{http://ismir2008.ismir.net/papers/ISMIR2008_219.pdf}, we'd better also reattribute the citations on line 216.}
+\acro{MIREX} \acro{ace} evaluation has also typically included
+comparative statistics to help determine whether the differences in
+performance between pairs of algorithms are statistically
+significant. Traditionally, Friedman's \acro{ANOVA} has been used for
+this purpose, accompanied by Tukey's Honest Significant Difference
+tests for each pair of algorithms. Friedman's \acro{ANOVA} is
+equivalent to a standard two-way \acro{ANOVA} with the actual
+measurements (in our case \acro{WCSR} or directional Hamming distance
+[\acro{DHD}], the new segmentation measure) %
+%% \Bas{In this paper we refer to ``the new segmentation measure'' or
+%%   something similar. I think it would be a good idea to give this new
+%%   segmentation measure a proper name. Maybe we can just call it
+%%   Directional Hamming Distance (\acro{DHD}?)}
+%% \Johan{Good point, a quick search learns me that DHD seems to be the
+%%   already established name and it's not that new in fact. It comes
+%%   from the image segmentation field and has been first used for music
+%%   in Abdallah et al. 2005 ISMIR paper. See also
+%%   \url{http://ismir2008.ismir.net/papers/ISMIR2008_219.pdf}, we'd
+%%   better also reattribute the citations on line 216.}
+%% \Ashley{I don't follow what you mean by reattribution here, Johan.}
 replaced by the rank of each treatment (in our case, each algorithm)
 on that measure within each block (in our case, for each song)
-\cite{Kutner2005}. The rank transformation makes
-Friedman's \acro{ANOVA} an excellent \enquote{one size fits all}
-approach that can be applied with minimal regard to the underlying
-distribution of the data, but these benefits come with costs. Like any
-non-parametric test, Friedman's \acro{ANOVA} can be less powerful than
-parametric alternatives where the distribution is known, and the rank
+\cite{Kutner2005}. The rank transformation makes Friedman's
+\acro{ANOVA} an excellent \enquote{one size fits all} approach that
+can be applied with minimal regard to the underlying distribution of
+the data, but these benefits come with costs. Like any non-parametric
+test, Friedman's \acro{ANOVA} can be less powerful than parametric
+alternatives where the distribution is known, and the rank
 transformation can obscure information inherent to the underlying
 measurement, magnifying trivial differences and neutralising
 significant inter-correlations.
@@ -311,28 +315,21 @@ significant inter-correlations.
 
 %% \Ashley{It turns out that you actually *can* do a weighted Friedman test, as it turns out. You just have to formulate as an (almost) normal two-way ANOVA with the variables in a particular order (and still with rank transformation, of course). I had no idea. Remind me the next time I see you and I'll show you.}
 
-There is no need to pay the costs of Friedman's \acro{ANOVA} for
-evaluating chord estimation, however. Fundamentally, \acro{WCSR} is a
+But there is no need to pay the costs of Friedman's \acro{ANOVA} for
+evaluating chord estimation. Fundamentally, \acro{WCSR} is a
 proportion, specifically the expected proportion of audio frames that
 an estimation algorithm will label correctly, and as such, it fits
 naturally into \emph{logistic regression} (i.e., a \emph{logit
-  model}). Likewise, the new segmentation score is constrained to fall
+  model}). Likewise, \acro{DHD} is constrained to fall
 between 0 and 100 percent, and thus it is also suitable for the same
 type of analysis. The remainder of this paper describes how logistic
 regression can be used to compare chord estimation algorithms, using
-\acro{MIREX} results from 2013 
-to illustrate four key benefits:
-easier interpretation, greater statistical power, an inter-correlation
-for identifying relationships among submitted algorithms, and better
+\acro{MIREX} results from 2013 to illustrate four key benefits: easier
+interpretation, greater statistical power, an inter-correlation for
+identifying relationships among submitted algorithms, and better
 detection of outliers.
 
 \section{Logistic Regression with GEEs}\label{sec:logistic-regression}
-\Bas{In this section the term 
-$\pi(\vec{x}; \vec{\betaup}) [1 - \pi(\vec{x}; \vec{\betaup})]$
-occurs frequently. Often $\betaup$ and $\vec{x}$ are correctly 
-used in the formula, but not addressed specifically. I wonder whether
-in some of the formulas it would not be clearer to leave out $\betaup$ and 
-$\vec{x}$, and just write $\pi[1 - \pi]$.}
 
 Proportions cannot be distributed normally because they are supported
 exclusively on [0, 1], and thus they present challenges for
@@ -353,47 +350,45 @@ or equivalently
   \log \frac{\pi(\vec{x}; \vec{\betaup})}{1-\pi(\vec{x}; \vec{\betaup})} = \vec{x}'\vec{\betaup}
   \ ,
 \end{equation}
-where $\pi(\vec{x}; \vec{\betaup})$ represents the relative frequency
-of \enquote{success} given the values of covariates in $\vec{x}$ and
-parameters $\vec{\betaup}$. In the case of a basic model for
-\acro{MIREX} \acro{ACE}, $\vec{x}$ would identify the algorithm and
-$\pi(\vec{x}; \vec{\betaup})$ would be the relative frequency of
-correct chord labels for that algorithm (i.e., \acro{WCSR}). In the
-case of data like \acro{ACE} results, where there are proportions
-$p_i$ of correct recognitions over $n_i$ analysis frames rather than
-binary successes or failures, logistic regression assumes that each $p_i$
-represents the observed proportion of successes among $n_i$
-conditionally-independent binary observations, or more formally, that
-the $p_i$ are distributed binomially:
-\begin{multline}
+where $\pi$ represents the relative frequency of \enquote{success}
+given the values of covariates in $\vec{x}$ and parameters
+$\vec{\betaup}$. In the case of a basic model for \acro{MIREX}
+\acro{ACE}, $\vec{x}$ would identify the algorithm and $\pi$ would be
+the relative frequency of correct chord labels for that algorithm
+(i.e., \acro{WCSR}). In the case of data like \acro{ACE} results,
+where there are proportions $p_i$ of correct labels over $n_i$
+analysis frames rather than binary successes or failures ($i$ indexing
+all combinations of individual songs and algorithms), logistic
+regression assumes that each $p_i$ represents the observed proportion
+of successes among $n_i$ conditionally-independent binary
+observations, or more formally, that the $p_i$ are distributed
+binomially:
+\begin{equation}
   \label{eq:binomial}
-  f_{P \mid N, \vec{X}}(p_i \mid n_i, \vec{x}_i; \vec{\betaup}) = \\
-  \binom{n_i}{p_i n_i} 
-  \pi(\vec{x}_i; \vec{\betaup})^{p_i n_i} 
-  \left[1 -\pi(\vec{x}_i; \vec{\betaup})\right]^{(1 - p_i) n_i}
+  f_{P \mid N, \vec{X}}(p \mid n, \vec{x}; \vec{\betaup}) = 
+  \binom{n}{p n}\, 
+  \pi^{p n} 
+  (1 -\pi)^{(1 - p) n}
   \ .
-\end{multline}
-The expected value for each $p_i$ is naturally $\pi(\vec{x}_i;
-\vec{\betaup})$, the overall relative frequency of success given
+\end{equation}
+The expected value for each $p_i$ is naturally $\pi_i = \pi(\vec{x}_i; \vec{\betaup})$ the overall relative frequency of success given
 $\vec{x}_i$:
 \begin{equation}
   \label{eq:E}
-  \mathbf{E}\left[P \mid N, \vec{X}\right] = 
-  \pi(\vec{x}; \vec{\betaup})\ .
+  \mathbf{E}\left[P \mid N, \vec{X}\right] = \pi(\vec{x}; \vec{\betaup})\ .
 \end{equation}
 
-Logistic regression models are typically fit by the maximum-likelihood
+Logistic regression models are most often fit by the maximum-likelihood
 technique, i.e., one is seeking a vector $\vec{\hat{\betaup}}$ to
 maximise the log-likelihood given the data:
 \begin{multline}
   \label{eq:loglik}
-  \ell_{P \mid N, \vec{X}}
-  (\vec{\betaup}; \vec{p}, \vec{n}, \vec{X}) =
-  \sum_i \left\{
-    \log \binom{n_i}{p_i n_i} + \right. \\ \left.\phantom{\binom{x}{x}}
-    p_i n_i \log \pi(\vec{x}_i; \vec{\betaup}) + 
-    (1 - p_i) n_i \log \left[1 -\pi(\vec{x}_i; 
-      \vec{\betaup})\right]\right\}\ .
+  \ell_{P \mid N, \vec{X}} (\vec{\betaup}; \vec{p}, \vec{n}, \vec{X}) =
+  \sum_i \left[
+    \log \binom{n_i}{p_i n_i}\ + \right. \\ \left.\phantom{\binom{x}{x}}
+    p_i n_i \log \pi_i + 
+    (1 - p_i) n_i \log\,(1 -\pi_i)
+  \right]\ .
 \end{multline}
 One thus solves the system of likelihood equations for
 $\vec{\betaup}$, whereby the gradient of Equation~\ref{eq:loglik} is
@@ -402,22 +397,21 @@ set to zero:
   \label{eq:gradient}
   \nabla_{\vec{\betaup}}
   \ell_{P \mid N, \vec{X}} 
-  (\vec{\betaup}; p_i, n_i, \vec{x}_i) =
-  \sum_i 
-  \left[p_i - \pi(\vec{x}_i; \vec{\betaup}) \right]
-  n_i \vec{x}_i = \vec{0}
+  (\vec{\betaup}; \vec{p}, \vec{n}, \vec{X}) =
+  \sum_i (p_i - \pi_i) n_i \vec{x}_i =
+  \vec{0}
 \end{equation}
 and so
 \begin{equation}
   \label{eq:betahat}
   \sum_i p_i n_i \vec{x}_i = 
-  \sum_i \pi(\vec{x}_i; \vec{\betaup}) n_i \vec{x}_i\ .
+  \sum_i \pi_i n_i \vec{x}_i\ .
 \end{equation}
-In the case of \acro{MIREX} \acro{ACE} evaluation, $\vec{x}_i$ is simply an
-indicator vector that partitions the data by algorithm, and thus
+In the case of \acro{MIREX} \acro{ACE} evaluation, each $\vec{x}_i$ is simply an
+indicator vector to partition the data by algorithm, and thus
 $\vec{\hat{\betaup}}$ is the parameter vector for which
-$\pi(\vec{x}_i; \vec{\betaup})$ equals the weighted mean of the $p_i$
-for the corresponding algorithm.
+$\pi_i$ equals the song-length--weighted mean over all $p_i$
+for that algorithm.
 
 \subsection{Quasi-Binomial Models}
 
@@ -427,8 +421,8 @@ proportional to $n_i$:
   \label{eq:var}
   \var\left[P \mid N, \vec{X}\right] = 
   \left(\frac{1}{n}\right)
-  \pi(\vec{x}; \vec{\betaup}) 
-  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \pi
+  \left[1 - \pi\right]
   \ .
 \end{equation}
 Equation~\ref{eq:var} only holds, however, if the estimates of chord labels
@@ -463,8 +457,8 @@ as before, but
   \label{eq:quasi-var}
   \var\left[P \mid N, \vec{X}\right] = 
   \left(\frac{\phi}{n}\right)
-  \pi(\vec{x}; \vec{\betaup}) 
-  \left[1 - \pi(\vec{x}; \vec{\betaup})\right]
+  \pi 
+  \left[1 - \pi\right]
   \ .
 \end{equation}
 These models are known as quasi-likelihood models because one loses a
@@ -679,8 +673,8 @@ Likewise, analogous to the quasi-binomial variance,
   \label{eq:gee-var}
   \var\left[P_j \mid N, \vec{X}_j\right] =
   \left(\frac{\phi}{n}\right)
-  \pi(\vec{x}_j; \vec{\betaup}) 
-  \left[1 - \pi(\vec{x}_j); \vec{\betaup})\right]
+  \pi
+  \left[1 - \pi\right]
   \ .
 \end{equation}
 \Bas{There is one `)' to many in Equation~\ref{eq:gee-var}.}%
