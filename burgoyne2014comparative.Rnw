@@ -261,14 +261,14 @@ that the metrics could be improved. At that time, they included only
 \acro{CSR} and \acro{WCSR} using a vocabulary of 12 major chords, 12
 minor chords and a ``no-chord'' label.  At \acro{ISMIR} 2010, a group
 of ten researchers met to discuss their dissatisfaction. In the
-resulting \enquote{Utrecht Agreement}, it was proposed that future
-evaluations should include more diverse chord vocabularies, such as
-seventh chords and inversions, as the 25-chord vocabulary was
-considered a rather coarse representation of tonal
-harmony.\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
-Furthermore, the group agreed that it was important to include a
-measure of segmentation quality in addition to \acro{CSR} and
-\acro{WCSR}.
+resulting \enquote{Utrecht
+  Agreement},\footnote{\url{http://www.music-ir.org/mirex/wiki/The_Utrecht_Agreement_on_Chord_Evaluation}}
+it was proposed that future evaluations should include more diverse
+chord vocabularies, such as seventh chords and inversions, as the
+25-chord vocabulary was considered a rather coarse representation of
+tonal harmony.  Furthermore, the group agreed that it was important to
+include a measure of segmentation quality in addition to \acro{CSR}
+and \acro{WCSR}.
 
 At approximately the same time, Christopher Harte proposed a
 formalisation of measures that implemented the aspirations indicated
@@ -280,7 +280,7 @@ different algorithms on the other
 hand~\cite{Pauwels-Peeters-2013}. They also performed a rigorous
 re-evaluation of all \acro{MIREX} \acro{ACE} submissions from 2010 to
 2012. As of \acro{MIREX} 2013, these revised evaluation procedures,
-including the chord sequence segmentation evaluation suggested by
+including the chord-sequence segmentation evaluation suggested by
 Harte~\cite{harte2010} and Mauch~\cite{mauch2010}, have been adopted
 in the context of the \acro{MIREX} \acro{ACE}
 task.%\footnote{\url{http://www.music-ir.org/mirex/wiki/2013:Audio_Chord_Estimation}}
@@ -327,8 +327,8 @@ between 0 and 100 percent, and thus it is also suitable for the same
 type of analysis. The remainder of this paper describes how logistic
 regression can be used to compare chord estimation algorithms, using
 \acro{MIREX} results from 2013 to illustrate four key benefits: easier
-interpretation, greater statistical power, an inter-correlation for
-identifying relationships among submitted algorithms, and better
+interpretation, greater statistical power, built-in correlation estimates for
+identifying relationships among algorithms, and better
 detection of outliers.
 
 \section{Logistic Regression with GEEs}\label{sec:logistic-regression}
@@ -359,8 +359,8 @@ $\vec{\betaup}$. In the case of a basic model for \acro{MIREX}
 the relative frequency of correct chord labels for that algorithm
 (i.e., \acro{WCSR}). In the case of data like \acro{ACE} results,
 where there are proportions $p_i$ of correct labels over $n_i$
-analysis frames rather than binary successes or failures ($i$ indexing
-all combinations of individual songs and algorithms), logistic
+analysis frames rather than binary successes or failures, $i$ indexing
+all combinations of individual songs and algorithms, logistic
 regression assumes that each $p_i$ represents the observed proportion
 of successes among $n_i$ conditionally-independent binary
 observations, or more formally, that the $p_i$ are distributed
@@ -373,7 +373,8 @@ binomially:
   (1 -\pi)^{(1 - p) n}
   \ .
 \end{equation}
-The expected value for each $p_i$ is naturally $\pi_i = \pi(\vec{x}_i; \vec{\betaup})$ the overall relative frequency of success given
+The expected value for each $p_i$ is naturally $\pi_i = \pi(\vec{x}_i;
+\vec{\betaup})$, the overall relative frequency of success given
 $\vec{x}_i$:
 \begin{equation}
   \label{eq:E}
@@ -427,10 +428,10 @@ proportional to $n_i$:
 Equation~\ref{eq:var} only holds, however, if the estimates of chord labels
 for each audio frame are independent. For \acro{ACE}, this is
 unrealistic: only the most naïve algorithms treat every frame
-independently; some kind of time-dependence structure is standard,
+independently. Some kind of time-dependence structure is standard,
 most frequently a hidden Markov model or some close derivative
-thereof. Hence one should expect that the variance of \acro{WCSR}
-estimates would be rather larger than the basic logit model would
+thereof. Hence one would expect that the variance of \acro{WCSR}
+estimates should be rather larger than the basic logit model would
 suggest. 
 
 This type of problem is extremely common across disciplines, so much
@@ -755,13 +756,13 @@ Friedman's \acro{ANOVA}, and thus its $y$-axis reflects not \acro{CSR}
 directly but the per-song ranks with respect to
 \acro{CSR}. Figure~\ref{fig:cld-plots2} comes from quasi-binomial
 regression estimated with \acro{GEE}s, as described in
-Section~\ref{sec:logistic-regression}. Its $y$-axis reflects per-song
+Section~\ref{sec:logistic-regression}. Its $y$-axis does reflect per-song
 \acro{CSR} directly. Above the boxplots, all significant pairwise
 differences are recorded as a \emph{compact letter display}. In the
 interest of reproducible research, we used a stricter $\alpha =$ .005
 threshold for reporting pairwise comparisons with the more
 contemporary false-discovery-rate \acro{(FDR)} approach of Benjamini
-and Hochberg as opposed to more traditional Tukey tests at $\alpha =$
+and Hochberg, as opposed to more traditional Tukey tests at $\alpha =$
 .05 \cite{Benjamini-Hochberg-1995,Johnson-2013}. Within either of the
 subfigures, the difference in performance between two algorithms that
 share any letter in the compact letter display is \emph{not}
