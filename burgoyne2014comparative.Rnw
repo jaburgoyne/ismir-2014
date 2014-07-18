@@ -595,11 +595,25 @@ contrasts(billboard.2013.7b$algorithm) <- contr.Sum(ALGOS)
 @ 
 
 <<cld-summaries, dependson="read-results">>=
-friedman.summary <- with(billboard.2013.7b,
-  summary(glht(glm(formula   = performance.rank ~ song + algorithm,
-                   weights   = duration),
-               mcp(algorithm = "Tukey")),
-          test = adjusted("fdr")))
+friedman.summary <- with(billboard.2013.7b, {
+  .summary. <- summary(glht(glm(formula   = performance.rank ~ song + algorithm,
+                                weights   = duration),
+                            mcp(algorithm = "Tukey")),
+                       test = adjusted("fdr"))
+  ## Use the standard post-hoc z-statistic for Friedman tests (see among others
+  ## Salvador García, Alberto Fernández, Julián Luengo & Francisco Herrera
+  ## (2010), “Advanced Nonparametric Tests for Multiple Comparisons in the
+  ## Design of Experiments in Computational Intelligence and Data Mining: 
+  ## Experimental Analysis of Power”, Information Sciences 180: 2044–64).
+  .summary.$test$sigma[1:length(.summary.$test$sigma)] <-
+    sqrt((nlevels(algorithm) * (nlevels(algorithm) - 1)) / (6 * nlevels(song)))
+  .summary.$test$tstat <-
+    .summary.$test$coefficients / .summary.$test$sigma
+  .summary.$test$pvalues <-
+    p.adjust(p      = 2 * pnorm(abs(.summary.$test$tstat), lower.tail = FALSE),
+             method = "fdr")
+  .summary.
+})
 logistic.summary <- with(billboard.2013.7b,
   summary(glht(geeglm(formula   = performance ~ algorithm,
                       family    = binomial(link = "logit"),
@@ -611,6 +625,7 @@ logistic.summary <- with(billboard.2013.7b,
 @ 
 
 <<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, include=FALSE>>=
+## TODO: Ideally, these would be weighted boxplots, too. 
 ## Compact letter displays require an extra top margin.
 par(mar = par("mar") + c(0, 0, 5, 0))
 friedman.cld <- cld(friedman.summary, level=.005)
@@ -652,8 +667,10 @@ points(1:12,
     algorithm. Given the respective statistical models, there are
     insufficient data to distinguish among algorithms sharing a
     letter, correcting to hold the \acro{FDR} at $\alpha =$
-    .005. Although Friedman's \acro{ANOVA} detects slightly more
-    significant pairwise differences than logistic regression
+    .005. Although Friedman's \acro{ANOVA} detects
+    \Sexpr{sum(friedman.summary$test$pvalues < .005) -
+      sum(logistic.summary$test$pvalues < .005)} more significant
+    pairwise differences than logistic regression
     (\Sexpr{sum(friedman.summary$test$pvalues < .005)}
     vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it
     operates on a different scale than \acro{CSR} and misorders
@@ -751,23 +768,23 @@ The boxplots in Figure~\ref{fig:cld-plots} give a more detailed view
 of the performance of each algorithm than
 Table~\ref{tab:mirex-results}. The figure is restricted to Vocabulary
 V, with the algorithms in descending order by
-\acro{WCSR}. Figure~\ref{fig:cld-plots1} comes from the traditional
-Friedman's \acro{ANOVA}, and thus its $y$-axis reflects not \acro{CSR}
-directly but the per-song ranks with respect to
+\acro{WCSR}. Figure~\ref{fig:cld-plots1} comes from Friedman's
+\acro{ANOVA} weighted by song length, and thus its $y$-axis reflects
+not \acro{CSR} directly but the per-song ranks with respect to
 \acro{CSR}. Figure~\ref{fig:cld-plots2} comes from quasi-binomial
 regression estimated with \acro{GEE}s, as described in
-Section~\ref{sec:logistic-regression}. Its $y$-axis does reflect per-song
-\acro{CSR} directly. Above the boxplots, all significant pairwise
-differences are recorded as a \emph{compact letter display}. In the
-interest of reproducible research, we used a stricter $\alpha =$ .005
-threshold for reporting pairwise comparisons with the more
-contemporary false-discovery-rate \acro{(FDR)} approach of Benjamini
-and Hochberg, as opposed to more traditional Tukey tests at $\alpha =$
-.05 \cite{Benjamini-Hochberg-1995,Johnson-2013}. Within either of the
-subfigures, the difference in performance between two algorithms that
-share any letter in the compact letter display is \emph{not}
-statistically significant. Overall, Friedman's \acro{ANOVA} found
-\Sexpr{sum(friedman.summary$test$pvalues < .005) -
+Section~\ref{sec:logistic-regression}. Its $y$-axis does reflect
+per-song \acro{CSR}. Above the boxplots, all significant
+pairwise differences are recorded as a \emph{compact letter
+  display}. In the interest of reproducible research, we used a
+stricter $\alpha =$ .005 threshold for reporting pairwise comparisons
+with the more contemporary false-discovery-rate \acro{(FDR)} approach
+of Benjamini and Hochberg, as opposed to more traditional Tukey tests
+at $\alpha =$ .05 \cite{Benjamini-Hochberg-1995,Johnson-2013}. Within
+either of the subfigures, the difference in performance between two
+algorithms that share any letter in the compact letter display is
+\emph{not} statistically significant. Overall, Friedman's \acro{ANOVA}
+found \Sexpr{sum(friedman.summary$test$pvalues < .005) -
   sum(logistic.summary$test$pvalues < .005)} more significant pairwise
 differences than logistic regression.
 
