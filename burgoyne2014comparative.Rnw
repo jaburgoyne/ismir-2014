@@ -112,6 +112,7 @@ library(geepack)   # geeglm() for GEEs
 library(boot)      # inv.logit() 
 library(aod)       # vcov.geeglm(): needed for Tukey tests
 library(multcomp)  # glht(), cld(), and mcp() for Tukey tests
+library(Hmisc)     # wtd.quantile() for boxplots
 
 opts_chunk$set(fig.align="center", cache=TRUE, echo=FALSE, warning=FALSE)
 
@@ -625,24 +626,90 @@ logistic.summary <- with(billboard.2013.7b,
 @ 
 
 <<cld-plots, dependson=c("cld-summaries"), fig.show="hold", fig.width=7, fig.height=5, include=FALSE>>=
-## TODO: Ideally, these would be weighted boxplots, too. 
+plot.weighted.cld <- function(x, ...) {
+  #' Plot a CLD with weighted response boxplots.
+  #' 
+  #' Adapted from plot.cld() in version 1.3-4 of the multcomp package (T.
+  #' Hothorn, F. Bretz & P. Westfall, 2014).
+  #'
+  #' @param x an object of type cld to plot
+  #'
+    mcletters <- x$mcletters
+    ### ms = mono-spaced
+    msletters <- mcletters$monospacedLetters
+    ### v = vertical
+    vletters <- sapply(msletters,
+                       function(x) paste(strsplit(x, "")[[1]], "\n", collapse = ""))
+    vletters <- vletters[gsub(" ", "", levels(x$x))]
+    msletters <- msletters[gsub(" ", "", levels(x$x))]
+    dat <- x[c("x", "y", "lp")]
+    if (is.null(x$weights)) {
+        dat$weights <- rep(1, NROW(x$y))
+    } else {
+        dat$weights <- x$weights
+    }
+    dat <- as.data.frame(dat)
+    xn <- x$xname
+    yn <- x$yname
+    if (!is.null(list(...)$xlab)) xn <- list(...)$xlab
+    if (!is.null(list(...)$ylab)) yn <- list(...)$ylab
+
+    if (!is.numeric(dat$y)) {
+      if (is.integer(dat$y)) dat$y <- as.numeric(dat$y)
+      else stop("Response must be numeric.")
+    }
+    
+    if (!is.factor(dat$x)) stop("Covariate must be a factor.")
+    
+    bx = list(stats = matrix(NA, 5, 0),
+              n     = c(),
+              conf  = matrix(NA, 2, 0),
+              out   = c(),
+              group = c(),
+              names = c())
+    for (i in 1:nlevels(dat$x)) {
+      g <- levels(dat$x)[i]
+      bx$names <- c(bx$names, g)
+      ## Compute basic weighted quantiles.
+      yg <- dat$y[!is.na(dat$y) & dat$x == g]
+      wq <- wtd.quantile(x       = yg,
+                         weights = dat$weights[dat$x == g],
+                         normwt  = TRUE)
+      iqr <- wq[4] - wq[2]
+      ## Use the default outlier computation from boxplot.stats().
+      wq[1] <- min(yg[yg >= wq[2] - 1.5 * iqr])
+      wq[5] <- max(yg[yg <= wq[4] + 1.5 * iqr])
+      bx$stats <- cbind(bx$stats, wq)
+      out <- yg[yg < wq[1] | yg > wq[5]]
+      bx$out <- c(bx$out, out)
+      bx$group <- c(bx$group, rep(i, length(out)))
+      n <- length(yg)
+      bx$n <- c(bx$n, n)
+      ## Use the default notch computation from boxplot.stats().
+      s <- 1.58 * iqr / sqrt(n)
+      bx$conf <- cbind(bx$conf, wq[3] + c(-s, s))
+    }
+    colnames(bx$stats) <- levels(dat$x)
+    bxp(bx, ...)
+    axis(3, at = 1:nlevels(dat$x), labels = vletters)
+}
+
 ## Compact letter displays require an extra top margin.
 par(mar = par("mar") + c(0, 0, 5, 0))
-friedman.cld <- cld(friedman.summary, level=.005)
-friedman.cld$covar <- FALSE # Tricks plot.cld into using the response scale.
-plot(friedman.cld,
-     xlab = "Algorithm",
-     ylab = "Rank per Song (1 low; 12 high)",
-     las  = 2)
+
+plot.weighted.cld(cld(friedman.summary, level=.005),
+                  xlab = "Algorithm",
+                  ylab = "Rank per Song (1 low; 12 high)",
+                  las  = 2)
 points(1:12,
        coef(friedman.summary$model)[1] +
        friedman.summary$model$contrasts$algorithm %*%
        coef(friedman.summary$model)[162:172],
        pch = 16)
-plot(cld(logistic.summary, level=.005),
-     xlab = "Algorithm",
-     ylab = "Chord-Symbol Recall (CSR)",
-     las  = 2)
+plot.weighted.cld(cld(logistic.summary, level=.005),
+                  xlab = "Algorithm",
+                  ylab = "Chord-Symbol Recall (CSR)",
+                  las  = 2)
 points(1:12,
        inv.logit(coef(logistic.summary$model)[1] +
                  logistic.summary$model$contrasts$algorithm %*%
@@ -661,18 +728,17 @@ points(1:12,
   }
   \caption{Boxplots and compact letter displays for the \acro{MIREX}
     \acro{ACE} 2013 results on the \emph{Billboard} 2013 test set with
-    vocabulary V (seventh chords and inversions). Bold lines represent
-    medians and filled dots (weighted) means. $N =$
+    vocabulary V (seventh chords and inversions), weighted by song
+    length. Bold lines represent medians and filled dots means. $N =$
     \Sexpr{length(levels(billboard.2013[['song']]))} songs per
-    algorithm. Given the respective statistical models, there are
-    insufficient data to distinguish among algorithms sharing a
-    letter, correcting to hold the \acro{FDR} at $\alpha =$
-    .005. Although Friedman's \acro{ANOVA} detects
-    \Sexpr{sum(friedman.summary$test$pvalues < .005) -
-      sum(logistic.summary$test$pvalues < .005)} more significant
-    pairwise differences than logistic regression
+    algorithm. Given the respective models, there are insufficient
+    data to distinguish among algorithms sharing a letter, correcting
+    to hold the \acro{FDR} at $\alpha =$ .005. Although Friedman's
+    \acro{ANOVA} detects \Sexpr{sum(friedman.summary$test$pvalues <
+      .005) - sum(logistic.summary$test$pvalues < .005)} more
+    significant pairwise differences than logistic regression
     (\Sexpr{sum(friedman.summary$test$pvalues < .005)}
-    vs. \Sexpr{sum(logistic.summary$test$pvalues < .005)}), it
+    vs.~\Sexpr{sum(logistic.summary$test$pvalues < .005)}), it
     operates on a different scale than \acro{CSR} and misorders
     algorithms relative to \acro{WCSR}.}
   \label{fig:cld-plots}  

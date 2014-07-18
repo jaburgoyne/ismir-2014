@@ -10,6 +10,7 @@ The primary source file is `burgoyne2014comparative.Rnw`. It combines LaTeX and 
 * `boot`
 * `car`
 * `geepack`
+* `Hmisc`
 * `multcomp`
 
 ## Required LaTeX Packages ##
