@@ -95,7 +95,7 @@ Licensed under a Creative Commons Attribution 4.0 International License (\acro{C
 \threeauthors%
 {John Ashley Burgoyne}%
 {Universiteit van Amsterdam \\ {\tt j.a.burgoyne@uva.nl}}%
-{Bas de Haas}%
+{W.~Bas de Haas}%
 {Universiteit Utrecht \\ {\tt w.b.dehaas@uu.nl}}%
 {Johan Pauwels}%
 {\acro{STMS IRCAM--CNRS--UPMC} \\ {\tt
